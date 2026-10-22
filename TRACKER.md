@@ -54,6 +54,38 @@ Goal: one connected walkable mela with Entrance → Promenade → Plaza → Ferr
       with four interactive shops, vendor figures, steam, seating and a branch path
       linking the lane to the promenade
 
+### Milestone 4 — Atmosphere pass (from `ref.mp4` reference study)
+
+Reference reviewed 2026-10-22: a low-poly night mela. Confirms our primitive-geometry art
+direction; the gaps are **crowd life**, **decoration density** and **what the ride view frames**.
+Vendor dialogue/voice was explicitly dropped from scope by the user.
+
+Priority 1 — crowd life (cheapest, biggest read)
+- [x] NPCs walk in loose groups of 2-4 sharing a path with per-member lateral + start offsets
+      (`makeGroup` in `npc/npcPaths.ts`)
+- [x] Prop variants (balloon on a string, carry bag) on a minority of NPCs
+- [x] Idlers clustered at attraction fronts facing what they came to see (`makeCluster`)
+- [x] Crowd raised from 13 to ~38 NPCs so the promenade reads as busy
+
+Priority 2 — decoration density
+- [x] `Bunting` component (triangle pennants on a sagging cord) in `world/Decor.tsx`
+- [x] Bunting strung the full length of the promenade, alternating with the light spans
+- [x] String lights on *every* lamp-post span (was every other)
+- [x] `CounterGoods` — three goods variants (sweets pile / jars / stacked boxes) on stall counters
+- [x] Bunting + lights carried into the Food Street lane
+- [x] Ground and path palette warmed (`#3d2f28` / `#6a4f3c`) and hemisphere bounce raised —
+      the fairground floor was rendering near-black against the reference's lit packed earth
+
+Priority 3 — ride view framing
+- [x] Ferris view audited in-browser: it did frame the mela, but ~45% of the frame was empty
+      sky mid-arc and ~60% at the top, because `RideCameraRig` passed `playerLook.pitch`
+      straight through and a level gaze from 28m up points at sky
+- [x] Height-proportional downward tilt in `RideCameraRig` (`seat.y / 26 * 0.5`, clamped):
+      negligible on the carousel, ~7° on the swing boat, ~29° at the Ferris apex.
+      Mouse look still layers on top. One number to retune if it feels forced.
+- [ ] Ride structure (spoke/arm/beam) at frame edges so the view reads as "on a ride" —
+      deferred, the carousel canopy below already gives foreground depth
+
 ### Zones
 - [x] `zones/entrance/EntranceZone.tsx` — arch, welcome sign, ticket booths
 - [x] `zones/promenade/PromenadeZone.tsx` — path, lamp posts, dressing stalls, central plaza centerpiece
@@ -87,16 +119,34 @@ frame rate was low but behaviour is representative).
 - [x] All four shops prompt and open their panel (jalebi, street food, toys, accessories)
 - [x] Shop purchase: select an item → "Take it" → hand-over toast, panel closes, back to exploring
 
+- [x] Crowd reads as busy: grouped walkers + attraction clusters, balloons/bags visible
+- [x] Bunting and light spans fill the overhead view the length of the promenade
+- [x] Ground renders as lit packed earth, not near-black
+- [x] Ferris ride auto-exits back to `exploring` after `FERRIS.rideDuration`
+- [x] Ride camera at the Ferris apex frames the mela below, not empty sky
+
 Not yet verified (needs a human at a real browser):
 - [ ] Mouse look and pointer lock (headless Chrome refuses pointer lock)
 - [ ] Shift-to-run speed in practice
-- [ ] Ride auto-exit after `FERRIS.rideDuration` and exit-by-E
+- [ ] Whether the ride's downward tilt feels natural or yanked
 - [ ] Pause menu resume path
 - [ ] Sustained frame rate with fireworks + NPCs on real GPU hardware
 - [ ] Window resize does not break the view or HUD
 
 ## Deferred to later milestones
 
-Fun Zone mini-games (ring toss, ball throw, cup stacking), rangoli creator, sky lanterns, carry-and-place diyas, full choreographed fireworks finale, Outdoor Movie Zone, Cultural Stage, full NPC behavior states (browsing/queueing/reacting), map/minimap, opening cinematic, photo mode, audio/ambient sound, settings menu, public facilities.
+Ordered by the build sequence agreed after the reference study:
+
+1. **Fun Zone mini-games** — ring toss, ball throw, cup stacking. The reference's
+   "Nishana Lagao" balloon-shoot (grid of balloons, "3 shots left · 0 hit" counter,
+   prize toast) is a good model for the throw game's scoring UI.
+2. **Minimap + persistent HUD bar** — reference keeps a live minimap bottom-right and a
+   Sound / Music / Bag / Photo / Help bar top-right at all times. Worth doing before more
+   zones land, since navigation gets harder with each one.
+3. Cultural Stage and Outdoor Movie Zone — reference models both as one "Ram Leela ground":
+   proscenium stage, flanking speakers, roofline string lights, rows of seated NPCs.
+4. Rangoli creator, sky lanterns, carry-and-place diyas, choreographed fireworks finale.
+5. Richer NPC behaviour states (browsing/queueing/reacting), opening cinematic, photo mode,
+   settings menu, public facilities, audio/ambient sound.
 
 **Open decision:** audio and the movie-screen video have no source yet — procedurally synthesise, generate, or user-supplied files? Needs answering before those two items start.

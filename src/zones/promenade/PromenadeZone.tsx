@@ -4,11 +4,13 @@ import { Text } from '@react-three/drei';
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier';
 import type { Group } from 'three';
 import { ZONES, PALETTE } from '../../config/constants';
-import { LampPost, StringLights, Banner, DressingStall } from '../../world/Decor';
+import { LampPost, StringLights, Banner, Bunting, DressingStall } from '../../world/Decor';
 
 const [plazaX, plazaZ] = ZONES.plaza;
 const PROMENADE_X = 8.5;
 const LAMP_ZS = Array.from({ length: 7 }, (_, i) => 40 - i * 9);
+// Pennants hang between the lamp spans so the overhead view is never empty.
+const BUNTING_ZS = LAMP_ZS.slice(0, -1).map((z) => z - 4.5);
 const STALL_X = 10.5;
 
 // Reserved zones from AGENT.md §3 — not yet in ZONES because nothing is built there.
@@ -56,12 +58,22 @@ export function PromenadeZone() {
         </group>
       ))}
 
-      {LAMP_ZS.filter((_, i) => i % 2 === 0).map((z) => (
+      {LAMP_ZS.map((z) => (
         <StringLights key={z} from={[-PROMENADE_X, 5, z]} to={[PROMENADE_X, 5, z]} count={12} sag={1.4} />
       ))}
 
+      {BUNTING_ZS.map((z) => (
+        <Bunting key={z} from={[-PROMENADE_X, 5.5, z]} to={[PROMENADE_X, 5.5, z]} count={15} sag={1.2} />
+      ))}
+
       {STALL_SPECS.map((s, i) => (
-        <DressingStall key={i} position={[s.x, 0, s.z]} rotation={[0, s.rotation, 0]} color={s.color} />
+        <DressingStall
+          key={i}
+          position={[s.x, 0, s.z]}
+          rotation={[0, s.rotation, 0]}
+          color={s.color}
+          variant={i}
+        />
       ))}
 
       <group ref={bannerGroup}>

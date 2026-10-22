@@ -5,7 +5,7 @@ import type { Group, Mesh, MeshStandardMaterial } from 'three';
 import { FOOD_STREET, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { LampPost, StringLights, Banner, DressingStall } from '../../world/Decor';
+import { LampPost, StringLights, Banner, Bunting, DressingStall } from '../../world/Decor';
 
 const { laneHalfLength, laneWidth, stallOffset, linkZ, position } = FOOD_STREET;
 const LOCAL_LINK_Z = linkZ - position[2];
@@ -456,6 +456,7 @@ function SeatingArea({ position: pos }: { position: [number, number, number] }) 
 }
 
 const LAMP_ZS = [-12, -4, 4, 12];
+const BUNTING_ZS = [-8, 0, 8];
 const FILLER_SPECS: Array<[number, number, string]> = [
   [-LANE_EDGE_X - 1.3, -laneHalfLength + 1.2, PALETTE.deepRed],
   [LANE_EDGE_X + 1.3, -laneHalfLength + 1.2, PALETTE.teal],
@@ -493,13 +494,22 @@ export function FoodStreetZone() {
           <LampPost position={[LANE_EDGE_X - 0.4, 0, z]} height={4.6} />
         </group>
       ))}
-      {LAMP_ZS.filter((_, i) => i % 2 === 0).map((z) => (
+      {LAMP_ZS.map((z) => (
         <StringLights
           key={z}
           from={[-LANE_EDGE_X + 0.4, 4.6, z]}
           to={[LANE_EDGE_X - 0.4, 4.6, z]}
           count={10}
           sag={1.1}
+        />
+      ))}
+      {BUNTING_ZS.map((z) => (
+        <Bunting
+          key={z}
+          from={[-LANE_EDGE_X + 0.4, 5.1, z]}
+          to={[LANE_EDGE_X - 0.4, 5.1, z]}
+          count={11}
+          sag={1.0}
         />
       ))}
 
@@ -514,7 +524,13 @@ export function FoodStreetZone() {
       <AccessoriesShop position={[stallOffset, 0, 10]} rotation={[0, -Math.PI / 2, 0]} />
 
       {FILLER_SPECS.map(([x, z, color], i) => (
-        <DressingStall key={i} position={[x, 0, z]} rotation={[0, i % 2 === 0 ? Math.PI / 2 : -Math.PI / 2, 0]} color={color} />
+        <DressingStall
+          key={i}
+          position={[x, 0, z]}
+          rotation={[0, i % 2 === 0 ? Math.PI / 2 : -Math.PI / 2, 0]}
+          color={color}
+          variant={i + 1}
+        />
       ))}
 
       <SeatingArea position={[LANE_EDGE_X - 1.3, 0, laneHalfLength - 2]} />

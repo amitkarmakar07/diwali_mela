@@ -74,6 +74,62 @@ export function StringLights({ from, to, count = 14, sag = 1.2 }: StringLightsPr
   );
 }
 
+const FLAG_COLORS = [
+  PALETTE.marigold,
+  PALETTE.magenta,
+  PALETTE.teal,
+  PALETTE.gold,
+  PALETTE.deepRed,
+];
+
+interface BuntingProps {
+  from: [number, number, number];
+  to: [number, number, number];
+  count?: number;
+  sag?: number;
+}
+
+/** Triangle pennants on a sagging cord — the thing that fills empty overhead sky. */
+export function Bunting({ from, to, count = 16, sag = 1.1 }: BuntingProps) {
+  const flags = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => {
+        const t = count === 1 ? 0 : i / (count - 1);
+        const position: [number, number, number] = [
+          from[0] + (to[0] - from[0]) * t,
+          from[1] + (to[1] - from[1]) * t - sag * Math.sin(Math.PI * t),
+          from[2] + (to[2] - from[2]) * t,
+        ];
+        return { position, color: FLAG_COLORS[i % FLAG_COLORS.length] };
+      }),
+    [from, to, count, sag],
+  );
+
+  const cordPoints = useMemo(() => flags.map((f) => f.position), [flags]);
+
+  return (
+    <group>
+      <Line points={cordPoints} color="#2a2430" lineWidth={1} />
+      {flags.map((f, i) => (
+        <mesh
+          key={i}
+          position={[f.position[0], f.position[1] - 0.22, f.position[2]]}
+          rotation={[Math.PI, 0, 0]}
+          scale={[1, 1, 0.22]}
+        >
+          <coneGeometry args={[0.19, 0.42, 4]} />
+          <meshStandardMaterial
+            color={f.color}
+            emissive={f.color}
+            emissiveIntensity={0.28}
+            roughness={0.8}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 interface BannerProps {
   position: [number, number, number];
   rotation?: [number, number, number];
@@ -112,12 +168,84 @@ interface DressingStallProps {
   position: [number, number, number];
   rotation?: [number, number, number];
   color?: string;
+  /** Picks which goods sit on the counter, so a row of stalls isn't identical. */
+  variant?: number;
 }
 
 const COUNTER_SIZE: [number, number, number] = [2.6, 1.0, 1.3];
 const POST_HEIGHT = 2.3;
+const COUNTER_TOP = COUNTER_SIZE[1];
 
-export function DressingStall({ position, rotation = [0, 0, 0], color = PALETTE.deepRed }: DressingStallProps) {
+function CounterGoods({ variant }: { variant: number }) {
+  if (variant % 3 === 0) {
+    return (
+      <group>
+        {[-0.8, -0.4, 0, 0.4, 0.8].map((x) => (
+          <mesh key={x} position={[x, COUNTER_TOP + 0.11, 0]} castShadow>
+            <sphereGeometry args={[0.11, 8, 6]} />
+            <meshStandardMaterial color={PALETTE.marigold} roughness={0.85} />
+          </mesh>
+        ))}
+        {[-0.6, -0.2, 0.2, 0.6].map((x) => (
+          <mesh key={x} position={[x, COUNTER_TOP + 0.29, 0]} castShadow>
+            <sphereGeometry args={[0.1, 8, 6]} />
+            <meshStandardMaterial color={PALETTE.gold} roughness={0.85} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
+
+  if (variant % 3 === 1) {
+    return (
+      <group>
+        {[-0.75, -0.15, 0.55].map((x, i) => (
+          <group key={x} position={[x, 0, 0]}>
+            <mesh position={[0, COUNTER_TOP + 0.16, 0]} castShadow>
+              <cylinderGeometry args={[0.15, 0.15, 0.32, 10]} />
+              <meshStandardMaterial
+                color={i === 1 ? PALETTE.teal : PALETTE.deepRed}
+                roughness={0.6}
+              />
+            </mesh>
+            <mesh position={[0, COUNTER_TOP + 0.35, 0]}>
+              <cylinderGeometry args={[0.16, 0.16, 0.06, 10]} />
+              <meshStandardMaterial color={PALETTE.gold} metalness={0.4} roughness={0.5} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    );
+  }
+
+  return (
+    <group>
+      <mesh position={[-0.6, COUNTER_TOP + 0.18, 0]} castShadow>
+        <boxGeometry args={[0.6, 0.36, 0.5]} />
+        <meshStandardMaterial color={PALETTE.magenta} roughness={0.8} />
+      </mesh>
+      <mesh position={[-0.6, COUNTER_TOP + 0.46, 0]} castShadow>
+        <boxGeometry args={[0.44, 0.2, 0.38]} />
+        <meshStandardMaterial color={PALETTE.teal} roughness={0.8} />
+      </mesh>
+      <mesh position={[0.35, COUNTER_TOP + 0.22, 0]} castShadow>
+        <boxGeometry args={[0.7, 0.44, 0.46]} />
+        <meshStandardMaterial color={PALETTE.gold} roughness={0.8} />
+      </mesh>
+      <mesh position={[0.95, COUNTER_TOP + 0.14, 0]} castShadow>
+        <coneGeometry args={[0.18, 0.28, 8]} />
+        <meshStandardMaterial color={PALETTE.marigold} roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+export function DressingStall({
+  position,
+  rotation = [0, 0, 0],
+  color = PALETTE.deepRed,
+  variant = 0,
+}: DressingStallProps) {
   const counterY = COUNTER_SIZE[1] / 2;
   const corners: [number, number][] = [
     [-COUNTER_SIZE[0] / 2 + 0.12, -COUNTER_SIZE[2] / 2 + 0.12],
@@ -159,6 +287,8 @@ export function DressingStall({ position, rotation = [0, 0, 0], color = PALETTE.
         <boxGeometry args={[1.1, 0.4, 0.06]} />
         <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.gold} emissiveIntensity={0.55} />
       </mesh>
+
+      <CounterGoods variant={variant} />
     </group>
   );
 }

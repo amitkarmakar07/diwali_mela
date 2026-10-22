@@ -50,7 +50,12 @@ export function RideCameraRig({ rideId, seat, duration }: RideCameraRigProps) {
 
     elapsed.current += delta;
     camera.position.copy(seat);
-    camEuler.set(playerLook.pitch, playerLook.yaw, 0);
+
+    // Looking level from the top of a wheel fills the frame with empty sky, so tilt
+    // toward the mela as the seat climbs. Mouse look still applies on top of this.
+    const heightBias = Math.min(seat.y / 26, 1) * 0.5;
+    const pitch = Math.max(-1.4, Math.min(1.4, playerLook.pitch - heightBias));
+    camEuler.set(pitch, playerLook.yaw, 0);
     camera.quaternion.setFromEuler(camEuler);
 
     if (elapsed.current >= duration) exitRide();

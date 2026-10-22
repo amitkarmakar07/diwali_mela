@@ -27,10 +27,25 @@ export function World() {
       <FoodStreetZone />
 
       {npcWalkers.map((w, i) => (
-        <NPC key={`w${i}`} mode="walk" waypoints={w.waypoints} speed={w.speed} color={w.color} />
+        <NPC
+          key={`w${i}`}
+          mode="walk"
+          waypoints={w.waypoints}
+          speed={w.speed}
+          color={w.color}
+          startT={w.startT}
+          prop={w.prop}
+        />
       ))}
       {npcIdlers.map((n, i) => (
-        <NPC key={`i${i}`} mode="idle" position={n.position} color={n.color} facing={n.facing} />
+        <NPC
+          key={`i${i}`}
+          mode="idle"
+          position={n.position}
+          color={n.color}
+          facing={n.facing}
+          prop={n.prop}
+        />
       ))}
     </>
   );

@@ -1,8 +1,9 @@
 export function Lighting() {
   return (
     <>
-      <ambientLight color="#4a5490" intensity={0.85} />
-      <hemisphereLight color="#2b3570" groundColor="#6b4a2e" intensity={0.8} />
+      <ambientLight color="#5a5a8c" intensity={0.95} />
+      {/* Warm bounce from the ground keeps the fairground floor readable at night. */}
+      <hemisphereLight color="#2b3570" groundColor="#9c6a3c" intensity={1.15} />
       <directionalLight
         color="#aac4ff"
         intensity={0.85}

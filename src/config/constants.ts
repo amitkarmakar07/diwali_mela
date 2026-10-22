@@ -102,8 +102,8 @@ export const COURTYARD = {
 export const PALETTE = {
   night: '#0b0a1f',
   nightFog: '#15112e',
-  ground: '#2a2033',
-  path: '#4a3a33',
+  ground: '#3d2f28',
+  path: '#6a4f3c',
   warm: '#ffb24d',
   warmBright: '#ffd79a',
   flame: '#ffc24a',
