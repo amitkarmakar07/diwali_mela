@@ -2,9 +2,16 @@ import { create } from 'zustand';
 
 export type PlayerMode = 'exploring' | 'riding' | 'panel' | 'paused';
 
+export interface ShopItem {
+  name: string;
+  /** Rupees — cosmetic only, nothing is tracked or spent. */
+  price: number;
+  note?: string;
+}
+
 export type PanelContent =
   | { type: 'info'; title: string; body: string }
-  | { type: 'shop'; title: string; items: string[] };
+  | { type: 'shop'; title: string; subtitle?: string; items: ShopItem[] };
 
 interface GameState {
   mode: PlayerMode;

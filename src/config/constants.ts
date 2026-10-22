@@ -28,7 +28,18 @@ export const ZONES = {
   rideZone: [-30, -38] as [number, number],
   carousel: [-15, -22] as [number, number],
   swingBoat: [-45, -24] as [number, number],
+  foodStreet: [-30, 8] as [number, number],
   courtyard: [28, -34] as [number, number],
+};
+
+export const FOOD_STREET = {
+  position: [-30, 0, 8] as [number, number, number],
+  /** Lane runs along Z; stalls face inward from both sides. */
+  laneHalfLength: 15,
+  laneWidth: 11,
+  stallOffset: 6.4,
+  /** Branch path joining the lane to the main promenade at x = -8. */
+  linkZ: 8,
 };
 
 export const CAROUSEL = {

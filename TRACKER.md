@@ -46,6 +46,14 @@ Goal: one connected walkable mela with Entrance → Promenade → Plaza → Ferr
 - [x] `zones/rideZone/Carousel.tsx` — rotating canopy, 8 bobbing horses on poles, ride id `carousel`
 - [x] `zones/rideZone/SwingBoat.tsx` — pendulum boat on an A-frame, ride id `swing-boat`
 
+### Milestone 3 — Shopping & Food Street
+- [x] Git repository initialised; first commit covers the whole vertical slice
+- [x] Shop panel upgraded: selectable items with rupee prices and notes, vendor subtitle,
+      "Take it" button firing a hand-over toast (`ShopItem` in `core/GameState.ts`)
+- [x] `zones/foodStreet/FoodStreetZone.tsx` — market lane at `ZONES.foodStreet` (-30, 8)
+      with four interactive shops, vendor figures, steam, seating and a branch path
+      linking the lane to the promenade
+
 ### Zones
 - [x] `zones/entrance/EntranceZone.tsx` — arch, welcome sign, ticket booths
 - [x] `zones/promenade/PromenadeZone.tsx` — path, lamp posts, dressing stalls, central plaza centerpiece
@@ -75,6 +83,9 @@ frame rate was low but behaviour is representative).
 - [x] Carousel: prompt → board → rotates with the rider seated on a horse facing outward
       → auto-exits back to exploring
 - [x] Swing boat: prompt → board → camera swings through the arc → "[E] Get off the ride"
+- [x] Food street reachable on foot from the promenade via the branch path
+- [x] All four shops prompt and open their panel (jalebi, street food, toys, accessories)
+- [x] Shop purchase: select an item → "Take it" → hand-over toast, panel closes, back to exploring
 
 Not yet verified (needs a human at a real browser):
 - [ ] Mouse look and pointer lock (headless Chrome refuses pointer lock)
@@ -86,6 +97,6 @@ Not yet verified (needs a human at a real browser):
 
 ## Deferred to later milestones
 
-Shopping/Food Street, Fun Zone mini-games (ring toss, ball throw, cup stacking), rangoli creator, sky lanterns, carry-and-place diyas, full choreographed fireworks finale, Outdoor Movie Zone, Cultural Stage, full NPC behavior states (browsing/queueing/reacting), map/minimap, opening cinematic, photo mode, audio/ambient sound, settings menu, public facilities.
+Fun Zone mini-games (ring toss, ball throw, cup stacking), rangoli creator, sky lanterns, carry-and-place diyas, full choreographed fireworks finale, Outdoor Movie Zone, Cultural Stage, full NPC behavior states (browsing/queueing/reacting), map/minimap, opening cinematic, photo mode, audio/ambient sound, settings menu, public facilities.
 
 **Open decision:** audio and the movie-screen video have no source yet — procedurally synthesise, generate, or user-supplied files? Needs answering before those two items start.

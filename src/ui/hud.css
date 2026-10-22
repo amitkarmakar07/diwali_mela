@@ -265,19 +265,99 @@
   white-space: pre-line;
 }
 
-.hud-modal-items {
+.hud-modal-subtitle {
+  margin: -0.5rem 0 1.25rem 0;
+  font-size: 0.98rem;
+  font-weight: 300;
+  font-style: italic;
+  color: rgba(255, 178, 77, 0.85);
+}
+
+.hud-shop-items {
   list-style: none;
-  margin: 1rem 0 1.5rem 0;
+  margin: 0 0 1.5rem 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.hud-modal-items li {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(255, 204, 51, 0.2);
+.hud-shop-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  background: rgba(11, 10, 31, 0.5);
+  border: 1px solid rgba(255, 204, 51, 0.18);
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
-.hud-modal-items li:last-child {
-  border-bottom: none;
+.hud-shop-item:hover {
+  background: rgba(255, 204, 51, 0.1);
+  border-color: rgba(255, 204, 51, 0.45);
+}
+
+.hud-shop-item.is-selected {
+  background: rgba(255, 204, 51, 0.18);
+  border-color: #ffcc33;
+  transform: translateX(3px);
+}
+
+.hud-shop-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hud-shop-item-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.hud-shop-item-note {
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: rgba(246, 236, 216, 0.6);
+}
+
+.hud-shop-item-price {
+  font-weight: 700;
+  color: #ffcc33;
+  white-space: nowrap;
+}
+
+.hud-modal-buy {
+  padding: 0.75rem 1.75rem;
+  background: linear-gradient(135deg, #ffcc33 0%, #ffb24d 100%);
+  color: #0b0a1f;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  pointer-events: auto;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: filter 0.2s ease;
+}
+
+.hud-modal-buy:disabled {
+  background: rgba(255, 204, 51, 0.12);
+  color: rgba(246, 236, 216, 0.45);
+  cursor: default;
+}
+
+.hud-modal-buy:not(:disabled):hover {
+  filter: brightness(1.1);
 }
 
 .hud-modal-helper {

@@ -1,33 +1,62 @@
+import { useEffect, useState } from 'react';
 import { useGame } from '../core/GameState';
 
 export function PanelModal() {
   const activePanel = useGame((s) => s.activePanel);
   const closePanel = useGame((s) => s.closePanel);
+  const [selected, setSelected] = useState<number | null>(null);
 
-  if (!activePanel) {
-    return null;
-  }
+  useEffect(() => {
+    setSelected(null);
+  }, [activePanel]);
+
+  if (!activePanel) return null;
+
+  const buy = () => {
+    if (activePanel.type !== 'shop' || selected === null) return;
+    const item = activePanel.items[selected];
+    useGame.getState().showToast(`The vendor hands you ${item.name}. Shubh Diwali!`);
+    closePanel();
+  };
 
   return (
     <div className="hud-modal-overlay">
       <div className="hud-modal-card">
         <h2 className="hud-modal-title">{activePanel.title}</h2>
 
-        {activePanel.type === 'info' && (
-          <p className="hud-modal-body">{activePanel.body}</p>
-        )}
+        {activePanel.type === 'info' && <p className="hud-modal-body">{activePanel.body}</p>}
 
         {activePanel.type === 'shop' && (
-          <ul className="hud-modal-items">
-            {activePanel.items.map((item, i) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
+          <>
+            {activePanel.subtitle && <p className="hud-modal-subtitle">{activePanel.subtitle}</p>}
+            <ul className="hud-shop-items">
+              {activePanel.items.map((item, i) => (
+                <li key={item.name}>
+                  <button
+                    type="button"
+                    className={`hud-shop-item${selected === i ? ' is-selected' : ''}`}
+                    onClick={() => setSelected(i)}
+                  >
+                    <span className="hud-shop-item-main">
+                      <span className="hud-shop-item-name">{item.name}</span>
+                      {item.note && <span className="hud-shop-item-note">{item.note}</span>}
+                    </span>
+                    <span className="hud-shop-item-price">₹{item.price}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
 
         <div className="hud-modal-helper">Press Esc to close</div>
 
         <div className="hud-modal-button-group">
+          {activePanel.type === 'shop' && (
+            <button className="hud-modal-buy" onClick={buy} disabled={selected === null}>
+              {selected === null ? 'Pick something' : 'Take it'}
+            </button>
+          )}
           <button className="hud-modal-close" onClick={closePanel}>
             Close
           </button>

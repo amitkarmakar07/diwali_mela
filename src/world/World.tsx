@@ -7,6 +7,7 @@ import { FerrisWheel } from '../zones/rideZone/FerrisWheel';
 import { Carousel } from '../zones/rideZone/Carousel';
 import { SwingBoat } from '../zones/rideZone/SwingBoat';
 import { CourtyardZone } from '../zones/celebrationCourtyard/CourtyardZone';
+import { FoodStreetZone } from '../zones/foodStreet/FoodStreetZone';
 import { NPC } from '../npc/NPC';
 import { npcWalkers, npcIdlers } from '../npc/npcPaths';
 
@@ -23,6 +24,7 @@ export function World() {
       <Carousel />
       <SwingBoat />
       <CourtyardZone />
+      <FoodStreetZone />
 
       {npcWalkers.map((w, i) => (
         <NPC key={`w${i}`} mode="walk" waypoints={w.waypoints} speed={w.speed} color={w.color} />
