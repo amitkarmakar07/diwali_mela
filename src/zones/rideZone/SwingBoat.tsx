@@ -14,6 +14,9 @@ const LEG_TILT = Math.PI / 13;
 const HULL_LENGTH = 3.2;
 const HULL_WIDTH = 1.5;
 const HULL_WALL = 1.2;
+const TIMBER = '#b9834f';
+const TIMBER_DARK = '#8a6038';
+const BOAT_BULB_COUNT = 6;
 
 export function SwingBoat() {
   const swingGroup = useRef<Group>(null);
@@ -59,12 +62,13 @@ export function SwingBoat() {
         )}
       </RigidBody>
 
+      {/* Prominent teal/turquoise A-frame legs splaying outward - the ride's signature colour. */}
       {[-TOWER_OFFSET, TOWER_OFFSET].map((x) => (
         <group key={x} position={[x, 0, 0]}>
           {[-1, 1].map((dir) => (
             <mesh key={dir} position={[0, SWING_BOAT.pivotHeight / 2, dir * LEG_SPREAD]} rotation={[dir * -LEG_TILT, 0, 0]} castShadow>
               <cylinderGeometry args={[0.22, 0.3, SWING_BOAT.pivotHeight, 8]} />
-              <meshStandardMaterial color="#473a52" metalness={0.5} roughness={0.5} />
+              <meshStandardMaterial color={PALETTE.teal} metalness={0.4} roughness={0.45} />
             </mesh>
           ))}
         </group>
@@ -72,8 +76,20 @@ export function SwingBoat() {
 
       <mesh position={[0, SWING_BOAT.pivotHeight, 0]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.22, 0.22, TOWER_OFFSET * 2 + 0.6, 10]} />
-        <meshStandardMaterial color="#6b5676" metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color={PALETTE.teal} metalness={0.5} roughness={0.4} />
       </mesh>
+
+      {/* Small warm bulbs along the crossbeam - the ride zone reads dark here, this is free light via emissive. */}
+      {Array.from({ length: BOAT_BULB_COUNT }, (_, i) => {
+        const x = -TOWER_OFFSET + (i / (BOAT_BULB_COUNT - 1)) * TOWER_OFFSET * 2;
+        const color = PALETTE.bulbColors[i % PALETTE.bulbColors.length];
+        return (
+          <mesh key={i} position={[x, SWING_BOAT.pivotHeight - 0.3, 0]}>
+            <sphereGeometry args={[0.11, 8, 8]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.3} />
+          </mesh>
+        );
+      })}
 
       <group ref={swingGroup} position={[0, SWING_BOAT.pivotHeight, 0]}>
         <mesh position={[0, -SWING_BOAT.armLength / 2, 0]} castShadow>
@@ -83,31 +99,45 @@ export function SwingBoat() {
 
         {/* Boat group origin sits at the keel, armLength below the pivot. */}
         <group position={[0, -SWING_BOAT.armLength, 0]}>
+          {/* Warm tan timber hull. */}
           <mesh position={[0, HULL_WALL / 2, 0]} castShadow>
             <boxGeometry args={[HULL_LENGTH, HULL_WALL, HULL_WIDTH]} />
-            <meshStandardMaterial color={PALETTE.deepRed} roughness={0.6} />
+            <meshStandardMaterial color={TIMBER} roughness={0.7} />
           </mesh>
+          {/* Stepped/ridged deck - rows of planks across the hull. */}
+          {[-1.1, -0.55, 0, 0.55, 1.1].map((bx, i) => (
+            <mesh key={bx} position={[bx, HULL_WALL + 0.03, 0]}>
+              <boxGeometry args={[0.3, 0.1, HULL_WIDTH - 0.1]} />
+              <meshStandardMaterial color={i % 2 === 0 ? TIMBER : TIMBER_DARK} roughness={0.75} />
+            </mesh>
+          ))}
+          {/* Deep red/maroon bow and stern trim. */}
           <mesh position={[HULL_LENGTH / 2 - 0.2, HULL_WALL + 0.15, 0]}>
             <coneGeometry args={[0.35, 0.6, 4]} />
-            <meshStandardMaterial color={PALETTE.marigold} roughness={0.5} />
+            <meshStandardMaterial color={PALETTE.deepRed} roughness={0.5} />
           </mesh>
           <mesh position={[-HULL_LENGTH / 2 + 0.2, HULL_WALL + 0.1, 0]}>
             <coneGeometry args={[0.3, 0.45, 4]} />
-            <meshStandardMaterial color={PALETTE.marigold} roughness={0.5} />
+            <meshStandardMaterial color={PALETTE.deepRed} roughness={0.5} />
           </mesh>
-          {[-0.8, 0, 0.8].map((bx) => (
-            <mesh key={bx} position={[bx, 0.45, 0]}>
-              <boxGeometry args={[0.4, 0.14, HULL_WIDTH - 0.3]} />
-              <meshStandardMaterial color="#5b4a66" roughness={0.7} />
-            </mesh>
-          ))}
-          <mesh position={[0, HULL_WALL - 0.15, HULL_WIDTH / 2 + 0.02]}>
-            <boxGeometry args={[HULL_LENGTH - 0.3, 0.3, 0.06]} />
-            <meshStandardMaterial color={PALETTE.teal} emissive={PALETTE.teal} emissiveIntensity={0.3} roughness={0.6} />
+          {/* Maroon gunwale trim along both top edges of the hull. */}
+          <mesh position={[0, HULL_WALL - 0.1, HULL_WIDTH / 2 + 0.02]}>
+            <boxGeometry args={[HULL_LENGTH - 0.3, 0.18, 0.08]} />
+            <meshStandardMaterial
+              color={PALETTE.deepRed}
+              emissive={PALETTE.deepRed}
+              emissiveIntensity={0.15}
+              roughness={0.6}
+            />
           </mesh>
-          <mesh position={[0, HULL_WALL - 0.15, -HULL_WIDTH / 2 - 0.02]}>
-            <boxGeometry args={[HULL_LENGTH - 0.3, 0.3, 0.06]} />
-            <meshStandardMaterial color={PALETTE.magenta} emissive={PALETTE.magenta} emissiveIntensity={0.3} roughness={0.6} />
+          <mesh position={[0, HULL_WALL - 0.1, -HULL_WIDTH / 2 - 0.02]}>
+            <boxGeometry args={[HULL_LENGTH - 0.3, 0.18, 0.08]} />
+            <meshStandardMaterial
+              color={PALETTE.deepRed}
+              emissive={PALETTE.deepRed}
+              emissiveIntensity={0.15}
+              roughness={0.6}
+            />
           </mesh>
         </group>
       </group>
@@ -134,8 +164,8 @@ export function SwingBoat() {
       <pointLight
         position={[0, SWING_BOAT.pivotHeight * 0.6, 0]}
         color={PALETTE.warm}
-        intensity={60}
-        distance={24}
+        intensity={90}
+        distance={30}
         decay={2}
       />
 

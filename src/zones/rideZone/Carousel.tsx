@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Text } from '@react-three/drei';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import { Group, Vector3 } from 'three';
 import { CAROUSEL, PALETTE } from '../../config/constants';
@@ -8,20 +9,18 @@ import { Interactable } from '../../interaction/Interactable';
 import { RideCameraRig, type RideLook } from './RideCameraRig';
 
 const TAU = Math.PI * 2;
-const PLATFORM_HEIGHT = 0.4;
-const ROOF_SEGMENTS = 12;
+// Layered deck: a darker skirt below a deep pink/magenta cap (reference: Ghode Wala Jhoola).
+const SKIRT_HEIGHT = 0.5;
+const DECK_HEIGHT = 0.14;
+const PLATFORM_HEIGHT = SKIRT_HEIGHT + DECK_HEIGHT;
 const BULB_COUNT = 16;
-const HORSE_COLORS = [
-  PALETTE.marigold,
-  PALETTE.magenta,
-  PALETTE.teal,
-  PALETTE.deepRed,
-  PALETTE.gold,
-  PALETTE.warmBright,
-  PALETTE.bulbColors[2],
-  PALETTE.bulbColors[4],
-];
-const ROOF_COLORS = [PALETTE.marigold, PALETTE.magenta, PALETTE.teal, PALETTE.gold];
+const RING_COLORS = [PALETTE.marigold, PALETTE.teal, PALETTE.gold];
+const BODY_COLORS = ['#f2ead6', '#8a5a34']; // alternating cream/white and tan/brown
+const SADDLE_COLORS = [PALETTE.magenta, PALETTE.teal, PALETTE.marigold, PALETTE.gold];
+// Pole runs from the deck up into the canopy, not stopping at the roofline.
+const POLE_HEIGHT = CAROUSEL.columnHeight + 0.6;
+const SIGN_RADIUS = 2.1;
+const SIGN_POLE_HEIGHT = CAROUSEL.columnHeight + CAROUSEL.canopyHeight + 0.5;
 
 export function Carousel() {
   const mount = useRef<Group>(null);
@@ -36,7 +35,8 @@ export function Carousel() {
     () =>
       Array.from({ length: CAROUSEL.horseCount }, (_, i) => ({
         baseAngle: (i / CAROUSEL.horseCount) * TAU,
-        color: HORSE_COLORS[i % HORSE_COLORS.length],
+        color: BODY_COLORS[i % BODY_COLORS.length],
+        saddleColor: SADDLE_COLORS[i % SADDLE_COLORS.length],
         phase: i * 1.7,
       })),
     [],
@@ -96,31 +96,40 @@ export function Carousel() {
         />
       </RigidBody>
 
-      <mesh position={[0, PLATFORM_HEIGHT / 2, 0]} receiveShadow>
-        <cylinderGeometry args={[CAROUSEL.platformRadius, CAROUSEL.platformRadius, PLATFORM_HEIGHT, 28]} />
-        <meshStandardMaterial color="#3a2f44" roughness={0.9} />
+      {/* Darker skirt below the deck. */}
+      <mesh position={[0, SKIRT_HEIGHT / 2, 0]} receiveShadow>
+        <cylinderGeometry args={[CAROUSEL.platformRadius * 0.92, CAROUSEL.platformRadius, SKIRT_HEIGHT, 28]} />
+        <meshStandardMaterial color="#241c2e" roughness={0.9} />
+      </mesh>
+      {/* Deep pink/magenta deck cap. */}
+      <mesh position={[0, SKIRT_HEIGHT + DECK_HEIGHT / 2, 0]} receiveShadow>
+        <cylinderGeometry args={[CAROUSEL.platformRadius, CAROUSEL.platformRadius, DECK_HEIGHT, 28]} />
+        <meshStandardMaterial color={PALETTE.magenta} roughness={0.7} />
       </mesh>
 
       <group ref={mount} position={[0, PLATFORM_HEIGHT, 0]}>
-        {[0, 1, 2, 3].map((seg) => (
-          <mesh key={seg} position={[0, (seg + 0.5) * (CAROUSEL.columnHeight / 4), 0]}>
-            <cylinderGeometry args={[0.5, 0.5, CAROUSEL.columnHeight / 4, 14]} />
+        {/* Single solid brass support column, with festive accent rings. */}
+        <mesh position={[0, CAROUSEL.columnHeight / 2, 0]}>
+          <cylinderGeometry args={[0.42, 0.42, CAROUSEL.columnHeight, 14]} />
+          <meshStandardMaterial color="#c9a24b" metalness={0.7} roughness={0.3} />
+        </mesh>
+        {[0.33, 0.66].map((frac, i) => (
+          <mesh key={frac} position={[0, CAROUSEL.columnHeight * frac, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.46, 0.07, 8, 16]} />
             <meshStandardMaterial
-              color={ROOF_COLORS[seg % ROOF_COLORS.length]}
-              emissive={ROOF_COLORS[seg % ROOF_COLORS.length]}
-              emissiveIntensity={0.18}
-              metalness={0.3}
-              roughness={0.6}
+              color={RING_COLORS[i % RING_COLORS.length]}
+              emissive={RING_COLORS[i % RING_COLORS.length]}
+              emissiveIntensity={0.25}
+              roughness={0.5}
             />
           </mesh>
         ))}
 
-        {Array.from({ length: ROOF_SEGMENTS }, (_, i) => (
-          <mesh key={i} position={[0, CAROUSEL.columnHeight + 1.1, 0]} rotation={[0, (i / ROOF_SEGMENTS) * TAU, 0]}>
-            <cylinderGeometry args={[0.1, CAROUSEL.roofRadius, 2.2, 1, 1, false, 0, TAU / ROOF_SEGMENTS]} />
-            <meshStandardMaterial color={ROOF_COLORS[i % ROOF_COLORS.length]} roughness={0.5} />
-          </mesh>
-        ))}
+        {/* Wide, shallow conical canopy - clearly wider than the platform. */}
+        <mesh position={[0, CAROUSEL.columnHeight + CAROUSEL.canopyHeight / 2, 0]}>
+          <coneGeometry args={[CAROUSEL.roofRadius, CAROUSEL.canopyHeight, 20]} />
+          <meshStandardMaterial color={PALETTE.marigold} roughness={0.55} />
+        </mesh>
 
         {Array.from({ length: BULB_COUNT }, (_, i) => {
           const a = (i / BULB_COUNT) * TAU;
@@ -142,8 +151,8 @@ export function Carousel() {
 
         {horses.map((h, i) => (
           <group key={i} rotation={[0, h.baseAngle, 0]}>
-            <mesh position={[CAROUSEL.horseRadius, CAROUSEL.columnHeight / 2, 0]}>
-              <cylinderGeometry args={[0.04, 0.04, CAROUSEL.columnHeight, 6]} />
+            <mesh position={[CAROUSEL.horseRadius, POLE_HEIGHT / 2, 0]}>
+              <cylinderGeometry args={[0.07, 0.07, POLE_HEIGHT, 6]} />
               <meshStandardMaterial color="#c9a24b" metalness={0.7} roughness={0.3} />
             </mesh>
             <group
@@ -152,10 +161,35 @@ export function Carousel() {
                 horseRefs.current[i] = el;
               }}
             >
-              <Horse color={h.color} />
+              <Horse color={h.color} saddleColor={h.saddleColor} />
             </group>
           </group>
         ))}
+      </group>
+
+      {/* Arched signboard above the canopy, fixed (does not spin with the ride). */}
+      <group position={[0, SIGN_POLE_HEIGHT, 0]}>
+        {[-1, 1].map((dir) => (
+          <mesh key={dir} position={[dir * SIGN_RADIUS, 0.7, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 1.4, 6]} />
+            <meshStandardMaterial color="#c9a24b" metalness={0.6} roughness={0.4} />
+          </mesh>
+        ))}
+        <mesh position={[0, 1.4, 0]}>
+          <torusGeometry args={[SIGN_RADIUS, 0.12, 8, 20, Math.PI]} />
+          <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.gold} emissiveIntensity={0.35} roughness={0.4} />
+        </mesh>
+        <Text
+          position={[0, 1.4, 0.2]}
+          font="/fonts/Mukta-Bold.ttf"
+          fontSize={0.42}
+          color={PALETTE.warmBright}
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={SIGN_RADIUS * 1.8}
+        >
+          Ghode Wala Jhoola
+        </Text>
       </group>
 
       <Interactable
@@ -179,7 +213,7 @@ export function Carousel() {
   );
 }
 
-function Horse({ color }: { color: string }) {
+function Horse({ color, saddleColor }: { color: string; saddleColor: string }) {
   return (
     <group>
       <mesh castShadow>
@@ -202,13 +236,15 @@ function Horse({ color }: { color: string }) {
           </mesh>
         )),
       )}
+      {/* Pointed ear/mane crest. */}
       <mesh position={[-0.48, -0.1, 0]} rotation={[0, 0, 0.5]}>
         <coneGeometry args={[0.1, 0.4, 6]} />
         <meshStandardMaterial color="#e8e4d8" roughness={0.8} />
       </mesh>
+      {/* Coloured saddle blanket. */}
       <mesh position={[0, 0.23, 0]}>
         <boxGeometry args={[0.32, 0.06, 0.26]} />
-        <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.gold} emissiveIntensity={0.3} />
+        <meshStandardMaterial color={saddleColor} emissive={saddleColor} emissiveIntensity={0.3} />
       </mesh>
     </group>
   );

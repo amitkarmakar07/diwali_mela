@@ -9,97 +9,6 @@
   overflow: hidden;
 }
 
-/* Start screen gate */
-.hud-start-gate {
-  position: absolute;
-  inset: 0;
-  background: rgba(11, 10, 31, 0.95);
-  backdrop-filter: blur(8px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  gap: 2rem;
-  z-index: 1000;
-}
-
-.hud-start-title {
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 10vw, 5.5rem);
-  font-weight: 400;
-  letter-spacing: 1px;
-  line-height: 1.05;
-  background: linear-gradient(170deg, #fff4d0 0%, #ffcc33 45%, #ff8c1a 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-align: center;
-  margin: 0;
-  filter: drop-shadow(0 0 28px rgba(255, 170, 60, 0.45))
-    drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
-}
-
-/* Marigold-string divider under the title */
-.hud-start-title::after {
-  content: '✦ · ✦ · ✦';
-  display: block;
-  margin-top: 0.75rem;
-  font-family: var(--font-ui);
-  font-size: 0.9rem;
-  letter-spacing: 0.5em;
-  -webkit-text-fill-color: #ffb24d;
-  opacity: 0.75;
-}
-
-.hud-start-subtitle {
-  font-size: 1.15rem;
-  font-weight: 300;
-  color: #d9cdbb;
-  text-align: center;
-  max-width: 34rem;
-  line-height: 1.7;
-  margin: 0;
-}
-
-.hud-start-controls {
-  background: rgba(26, 21, 56, 0.8);
-  border: 1px solid rgba(255, 204, 51, 0.3);
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 400px;
-  font-size: 0.95rem;
-  line-height: 1.8;
-  text-align: center;
-  backdrop-filter: blur(4px);
-}
-
-.hud-start-button {
-  padding: 1rem 2.75rem;
-  font-family: var(--font-ui);
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, #ffcc33 0%, #ffb24d 100%);
-  color: #0b0a1f;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  pointer-events: auto;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 24px rgba(255, 204, 51, 0.25);
-}
-
-.hud-start-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(255, 204, 51, 0.4);
-}
-
-.hud-start-button:active {
-  transform: translateY(0);
-}
-
 /* Crosshair */
 .hud-crosshair {
   position: absolute;
@@ -519,14 +428,6 @@
 
   .hud-interaction-prompt {
     bottom: 1.5rem;
-  }
-
-  .hud-start-gate {
-    padding: 1rem;
-  }
-
-  .hud-start-subtitle {
-    font-size: 1rem;
   }
 
   .hud-modal-card {

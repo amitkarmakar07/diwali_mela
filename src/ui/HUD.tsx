@@ -4,6 +4,7 @@ import { InteractionPrompt } from './InteractionPrompt';
 import { Minimap } from './Minimap';
 import { PanelModal } from './PanelModal';
 import { PauseMenu } from './PauseMenu';
+import { StartGate } from './StartGate';
 import './hud.css';
 
 export function HUD() {
@@ -78,21 +79,7 @@ export function HUD() {
   if (!started) {
     return (
       <div className="hud-root">
-        <div className="hud-start-gate">
-          <h1 className="hud-start-title">Diwali Mela 3D</h1>
-          <p className="hud-start-subtitle">
-            Explore a festive Indian fairground, light diyas, ride attractions, and celebrate the
-            Festival of Lights
-          </p>
-          <div className="hud-start-controls">
-            <div style={{ marginBottom: '0.5rem' }}>Use WASD to move, mouse to look around</div>
-            <div>Press E to interact with objects</div>
-            <div>Press Esc to pause at any time</div>
-          </div>
-          <button className="hud-start-button" onClick={handleStartClick}>
-            Enter the Mela
-          </button>
-        </div>
+        <StartGate onEnter={handleStartClick} />
       </div>
     );
   }

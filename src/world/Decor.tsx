@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Line } from '@react-three/drei';
+import { Line, Text } from '@react-three/drei';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { Group, Mesh, MeshStandardMaterial } from 'three';
 import { PALETTE } from '../config/constants';
@@ -172,12 +172,90 @@ export function Banner({ position, rotation = [0, 0, 0], width = 3, color = PALE
   );
 }
 
+interface CandyAwningProps {
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  width: number;
+  depth: number;
+  stripes?: number;
+  colorA?: string;
+  colorB?: string;
+}
+
+/** A pitched roof panel split into alternating stripes — the candy-cane awning from the reference stall. */
+export function CandyAwning({
+  position,
+  rotation = [0, 0, 0],
+  width,
+  depth,
+  stripes = 5,
+  colorA = PALETTE.deepRed,
+  colorB = '#f2e6c9',
+}: CandyAwningProps) {
+  const stripeWidth = width / stripes;
+  return (
+    <group position={position} rotation={rotation}>
+      {Array.from({ length: stripes }, (_, i) => {
+        const x = (i + 0.5) * stripeWidth - width / 2;
+        const color = i % 2 === 0 ? colorA : colorB;
+        return (
+          <mesh key={i} position={[x, 0, 0]} castShadow>
+            <boxGeometry args={[stripeWidth, 0.06, depth]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.15} roughness={0.75} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+const GARLAND_COLORS = [PALETTE.marigold, PALETTE.gold];
+
+interface GarlandProps {
+  from: [number, number, number];
+  to: [number, number, number];
+  count?: number;
+  sag?: number;
+}
+
+/** Marigold garland draped along a counter front — static emissive beads, no per-frame cost. */
+export function Garland({ from, to, count = 7, sag = 0.18 }: GarlandProps) {
+  const beads = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => {
+        const t = count === 1 ? 0 : i / (count - 1);
+        const position: [number, number, number] = [
+          from[0] + (to[0] - from[0]) * t,
+          from[1] + (to[1] - from[1]) * t - sag * Math.sin(Math.PI * t),
+          from[2] + (to[2] - from[2]) * t,
+        ];
+        return { position, color: GARLAND_COLORS[i % GARLAND_COLORS.length] };
+      }),
+    [from, to, count, sag],
+  );
+  const cordPoints = useMemo(() => beads.map((b) => b.position), [beads]);
+
+  return (
+    <group>
+      <Line points={cordPoints} color="#5a4420" lineWidth={1} />
+      {beads.map((b, i) => (
+        <mesh key={i} position={b.position}>
+          <sphereGeometry args={[0.065, 6, 6]} />
+          <meshStandardMaterial color={b.color} emissive={b.color} emissiveIntensity={0.5} roughness={0.6} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 interface DressingStallProps {
   position: [number, number, number];
   rotation?: [number, number, number];
   color?: string;
   /** Picks which goods sit on the counter, so a row of stalls isn't identical. */
   variant?: number;
+  /** Shop name painted on the illuminated signboard. */
+  name?: string;
 }
 
 const COUNTER_SIZE: [number, number, number] = [2.6, 1.0, 1.3];
@@ -253,6 +331,7 @@ export function DressingStall({
   rotation = [0, 0, 0],
   color = PALETTE.deepRed,
   variant = 0,
+  name = 'Mela Dukaan',
 }: DressingStallProps) {
   const counterY = COUNTER_SIZE[1] / 2;
   const corners: [number, number][] = [
@@ -261,6 +340,8 @@ export function DressingStall({
     [-COUNTER_SIZE[0] / 2 + 0.12, COUNTER_SIZE[2] / 2 - 0.12],
     [COUNTER_SIZE[0] / 2 - 0.12, COUNTER_SIZE[2] / 2 - 0.12],
   ];
+  const signWidth = COUNTER_SIZE[0] + 0.5;
+  const frontZ = -COUNTER_SIZE[2] / 2 - 0.05;
 
   return (
     <group position={position} rotation={rotation}>
@@ -282,19 +363,49 @@ export function DressingStall({
         </mesh>
       ))}
 
-      <mesh position={[0, POST_HEIGHT + 0.05, -COUNTER_SIZE[2] * 0.15]} rotation={[Math.PI / 10, 0, 0]} castShadow>
-        <boxGeometry args={[COUNTER_SIZE[0] + 0.4, 0.06, COUNTER_SIZE[2] * 0.9]} />
-        <meshStandardMaterial color={PALETTE.marigold} roughness={0.75} />
-      </mesh>
+      {/* Candy-striped awning facing the counter front; the back pitch stays plain, it's rarely seen. */}
+      <CandyAwning
+        position={[0, POST_HEIGHT + 0.05, frontZ + 0.1]}
+        rotation={[Math.PI / 10, 0, 0]}
+        width={signWidth}
+        depth={COUNTER_SIZE[2] * 0.9}
+      />
       <mesh position={[0, POST_HEIGHT + 0.05, COUNTER_SIZE[2] * 0.15]} rotation={[-Math.PI / 10, 0, 0]} castShadow>
         <boxGeometry args={[COUNTER_SIZE[0] + 0.4, 0.06, COUNTER_SIZE[2] * 0.9]} />
         <meshStandardMaterial color={PALETTE.teal} roughness={0.75} />
       </mesh>
 
-      <mesh position={[0, POST_HEIGHT + 0.55, -COUNTER_SIZE[2] / 2 - 0.05]}>
-        <boxGeometry args={[1.1, 0.4, 0.06]} />
-        <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.gold} emissiveIntensity={0.55} />
+      {/* Row of warm bulbs along the awning's front edge — reuses the flicker already tuned for lamps. */}
+      <StringLights
+        from={[-signWidth / 2 + 0.2, POST_HEIGHT - 0.1, frontZ + 0.08]}
+        to={[signWidth / 2 - 0.2, POST_HEIGHT - 0.1, frontZ + 0.08]}
+        count={5}
+        sag={0.08}
+      />
+
+      <mesh position={[0, POST_HEIGHT + 0.7, frontZ]}>
+        <boxGeometry args={[signWidth, 0.5, 0.08]} />
+        <meshStandardMaterial color="#241c33" roughness={0.9} />
       </mesh>
+      <Text
+        position={[0, POST_HEIGHT + 0.7, frontZ + 0.05]}
+        font="/fonts/Mukta-Bold.ttf"
+        fontSize={0.2}
+        color={PALETTE.warmBright}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={signWidth - 0.2}
+      >
+        {name}
+      </Text>
+
+      {/* Marigold garland strung along the counter's front lip. */}
+      <Garland
+        from={[-COUNTER_SIZE[0] / 2 + 0.1, counterY + 0.08, COUNTER_SIZE[2] / 2]}
+        to={[COUNTER_SIZE[0] / 2 - 0.1, counterY + 0.08, COUNTER_SIZE[2] / 2]}
+        count={6}
+        sag={0.12}
+      />
 
       <CounterGoods variant={variant} />
     </group>

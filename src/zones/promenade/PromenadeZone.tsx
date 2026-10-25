@@ -13,25 +13,21 @@ const LAMP_ZS = Array.from({ length: 7 }, (_, i) => 40 - i * 9);
 const BUNTING_ZS = LAMP_ZS.slice(0, -1).map((z) => z - 4.5);
 const STALL_X = 10.5;
 
-// Reserved zones from AGENT.md §3 — not yet in ZONES because nothing is built there.
-const FOOD_STREET: [number, number] = [-30, 6];
-const CULTURAL_STAGE: [number, number] = [26, 22];
-
 const SIGN_TARGETS = [
   { label: 'Ride Zone', x: ZONES.rideZone[0], z: ZONES.rideZone[1] },
   { label: 'Celebration Courtyard', x: ZONES.courtyard[0], z: ZONES.courtyard[1] },
-  { label: 'Food Street', x: FOOD_STREET[0], z: FOOD_STREET[1] },
-  { label: 'Cultural Stage', x: CULTURAL_STAGE[0], z: CULTURAL_STAGE[1] },
+  { label: 'Food Street', x: ZONES.foodStreet[0], z: ZONES.foodStreet[1] },
+  { label: 'Cultural Stage', x: ZONES.culturalStage[0], z: ZONES.culturalStage[1] },
   { label: 'Fun Zone', x: ZONES.funZone[0], z: ZONES.funZone[1] },
 ];
 
-const STALL_SPECS: Array<{ x: number; z: number; color: string; rotation: number }> = [
-  { x: -STALL_X, z: 33, color: PALETTE.marigold, rotation: -Math.PI / 2 },
-  { x: STALL_X, z: 24, color: PALETTE.teal, rotation: Math.PI / 2 },
-  { x: -STALL_X, z: 15, color: PALETTE.magenta, rotation: -Math.PI / 2 },
-  { x: STALL_X, z: 6, color: PALETTE.deepRed, rotation: Math.PI / 2 },
-  { x: -STALL_X, z: -3, color: PALETTE.gold, rotation: -Math.PI / 2 },
-  { x: STALL_X, z: -11, color: PALETTE.marigold, rotation: Math.PI / 2 },
+const STALL_SPECS: Array<{ x: number; z: number; color: string; rotation: number; name: string }> = [
+  { x: -STALL_X, z: 33, color: PALETTE.marigold, rotation: -Math.PI / 2, name: 'Sharma Ji Ki Chaat' },
+  { x: STALL_X, z: 24, color: PALETTE.teal, rotation: Math.PI / 2, name: 'Mathur Achar Wale' },
+  { x: -STALL_X, z: 15, color: PALETTE.magenta, rotation: -Math.PI / 2, name: 'Khilone Ki Dukaan' },
+  { x: STALL_X, z: 6, color: PALETTE.deepRed, rotation: Math.PI / 2, name: 'Agarwal Mithai Bhandar' },
+  { x: -STALL_X, z: -3, color: PALETTE.gold, rotation: -Math.PI / 2, name: 'Verma Masala Store' },
+  { x: STALL_X, z: -11, color: PALETTE.marigold, rotation: Math.PI / 2, name: 'Ganesh Tohfa Bhandar' },
 ];
 
 const BENCH_SPECS: Array<[number, number]> = [
@@ -74,6 +70,7 @@ export function PromenadeZone() {
           rotation={[0, s.rotation, 0]}
           color={s.color}
           variant={i}
+          name={s.name}
         />
       ))}
 

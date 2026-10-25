@@ -54,6 +54,22 @@ interface GameState {
   clearToast: () => void;
 }
 
+/**
+ * One keypress must cause at most one mode change. Both the ride rigs and
+ * InteractionManager listen for E on the same key event, so leaving a ride flips the
+ * mode to 'exploring' mid-event and the very same press then reaches InteractionManager
+ * — which would re-board the player onto the hotspot they are still standing on.
+ */
+let lastTransitionAt = -Infinity;
+
+export function markModeTransition() {
+  lastTransitionAt = performance.now();
+}
+
+export function msSinceModeTransition() {
+  return performance.now() - lastTransitionAt;
+}
+
 export const useGame = create<GameState>((set, get) => ({
   mode: 'exploring',
   started: false,
@@ -67,24 +83,42 @@ export const useGame = create<GameState>((set, get) => ({
   foundGoldenDiya: false,
   toast: null,
 
-  start: () => set({ started: true, mode: 'exploring' }),
+  start: () => {
+    markModeTransition();
+    set({ started: true, mode: 'exploring' });
+  },
 
-  enterRide: (rideId) =>
-    set({ mode: 'riding', activeRide: rideId, nearestId: null, nearestLabel: null }),
+  enterRide: (rideId) => {
+    markModeTransition();
+    set({ mode: 'riding', activeRide: rideId, nearestId: null, nearestLabel: null });
+  },
 
-  exitRide: () => set({ mode: 'exploring', activeRide: null }),
+  exitRide: () => {
+    markModeTransition();
+    set({ mode: 'exploring', activeRide: null });
+  },
 
-  enterGame: (gameId) =>
-    set({ mode: 'minigame', activeGame: gameId, nearestId: null, nearestLabel: null }),
+  enterGame: (gameId) => {
+    markModeTransition();
+    set({ mode: 'minigame', activeGame: gameId, nearestId: null, nearestLabel: null });
+  },
 
-  exitGame: () => set({ mode: 'exploring', activeGame: null, gameStatus: null }),
+  exitGame: () => {
+    markModeTransition();
+    set({ mode: 'exploring', activeGame: null, gameStatus: null });
+  },
 
   setGameStatus: (status) => set({ gameStatus: status }),
 
-  openPanel: (panel) =>
-    set({ mode: 'panel', activePanel: panel, nearestId: null, nearestLabel: null }),
+  openPanel: (panel) => {
+    markModeTransition();
+    set({ mode: 'panel', activePanel: panel, nearestId: null, nearestLabel: null });
+  },
 
-  closePanel: () => set({ mode: 'exploring', activePanel: null }),
+  closePanel: () => {
+    markModeTransition();
+    set({ mode: 'exploring', activePanel: null });
+  },
 
   setPaused: (paused) => {
     if (paused) {

@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Text } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { Group, Mesh, MeshStandardMaterial } from 'three';
 import { FOOD_STREET, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { LampPost, StringLights, Banner, Bunting, DressingStall } from '../../world/Decor';
+import { LampPost, StringLights, Banner, Bunting, DressingStall, CandyAwning, Garland } from '../../world/Decor';
 
 const { laneHalfLength, laneWidth, stallOffset, linkZ, position } = FOOD_STREET;
 const LOCAL_LINK_Z = linkZ - position[2];
@@ -175,7 +176,15 @@ function HangingLantern({ position: pos, color }: { position: [number, number, n
   );
 }
 
-function StallFrame({ color, awningColor }: { color: string; awningColor: string }) {
+function StallFrame({
+  color,
+  awningColor,
+  name,
+}: {
+  color: string;
+  awningColor: string;
+  name: string;
+}) {
   const counterSize: [number, number, number] = [2.8, 1.0, 1.1];
   return (
     <>
@@ -197,10 +206,30 @@ function StallFrame({ color, awningColor }: { color: string; awningColor: string
           <meshStandardMaterial color={METAL} roughness={0.7} />
         </mesh>
       ))}
-      <mesh position={[0, 2.25, -0.2]} rotation={[Math.PI / 9, 0, 0]} castShadow>
-        <boxGeometry args={[3.2, 0.06, 1.1]} />
-        <meshStandardMaterial color={awningColor} emissive={awningColor} emissiveIntensity={0.2} roughness={0.75} />
+
+      {/* Candy-striped awning over the counter, matching the reference stall design. */}
+      <CandyAwning position={[0, 2.25, -0.2]} rotation={[Math.PI / 9, 0, 0]} width={3.2} depth={1.1} colorA={awningColor} />
+
+      {/* Illuminated signboard with the shop's name, plus a warm bulb row along the awning edge. */}
+      <mesh position={[0, 2.68, 0.35]}>
+        <boxGeometry args={[3.0, 0.5, 0.08]} />
+        <meshStandardMaterial color="#241c33" roughness={0.9} />
       </mesh>
+      <Text
+        position={[0, 2.68, 0.4]}
+        font="/fonts/Mukta-Bold.ttf"
+        fontSize={0.22}
+        color={PALETTE.warmBright}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={2.8}
+      >
+        {name}
+      </Text>
+      <StringLights from={[-1.5, 2.0, 0.42]} to={[1.5, 2.0, 0.42]} count={5} sag={0.08} />
+
+      {/* Marigold garland draped along the counter's front lip. */}
+      <Garland from={[-1.3, counterSize[1] + 0.08, 0.5]} to={[1.3, counterSize[1] + 0.08, 0.5]} count={6} sag={0.12} />
     </>
   );
 }
@@ -231,7 +260,7 @@ function JalebiStall({ position: pos, rotation }: { position: [number, number, n
           })
         }
       />
-      <StallFrame color={PALETTE.marigold} awningColor={PALETTE.gold} />
+      <StallFrame color={PALETTE.marigold} awningColor={PALETTE.gold} name="Lakshmi Sweets Bhandar" />
       <mesh position={[0, 1.08, 0.2]}>
         <cylinderGeometry args={[0.55, 0.6, 0.08, 24]} />
         <meshStandardMaterial color={METAL} metalness={0.6} roughness={0.4} />
@@ -289,7 +318,7 @@ function StreetFoodStall({ position: pos, rotation }: { position: [number, numbe
           })
         }
       />
-      <StallFrame color={PALETTE.teal} awningColor={PALETTE.deepRed} />
+      <StallFrame color={PALETTE.teal} awningColor={PALETTE.deepRed} name="Bablu Ki Rasoi" />
       <mesh position={[-0.6, 1.1, 0.15]} castShadow>
         <cylinderGeometry args={[0.18, 0.2, 0.3, 12]} />
         <meshStandardMaterial color={METAL} metalness={0.7} roughness={0.3} />
@@ -337,7 +366,7 @@ function ToyShop({ position: pos, rotation }: { position: [number, number, numbe
           })
         }
       />
-      <StallFrame color={PALETTE.magenta} awningColor={PALETTE.teal} />
+      <StallFrame color={PALETTE.magenta} awningColor={PALETTE.teal} name="Mela Khilone Ghar" />
       {[-0.9, -0.5, 0.5, 0.9].map((x, i) => (
         <mesh key={i} position={[x, 1.1, -0.1]}>
           <boxGeometry args={[0.22, 0.14, 0.4]} />
@@ -390,7 +419,7 @@ function AccessoriesShop({ position: pos, rotation }: { position: [number, numbe
           })
         }
       />
-      <StallFrame color={PALETTE.deepRed} awningColor={PALETTE.marigold} />
+      <StallFrame color={PALETTE.deepRed} awningColor={PALETTE.marigold} name="Rani Sajawat Bhandar" />
       <BangleStack position={[-1.0, 1.05, 0.1]} color={PALETTE.gold} />
       <BangleStack position={[-0.7, 1.05, 0.1]} color={PALETTE.magenta} />
       <BangleStack position={[-0.4, 1.05, 0.1]} color={PALETTE.teal} />
@@ -457,10 +486,10 @@ function SeatingArea({ position: pos }: { position: [number, number, number] }) 
 
 const LAMP_ZS = [-12, -4, 4, 12];
 const BUNTING_ZS = [-8, 0, 8];
-const FILLER_SPECS: Array<[number, number, string]> = [
-  [-LANE_EDGE_X - 1.3, -laneHalfLength + 1.2, PALETTE.deepRed],
-  [LANE_EDGE_X + 1.3, -laneHalfLength + 1.2, PALETTE.teal],
-  [-LANE_EDGE_X - 1.3, laneHalfLength - 4.2, PALETTE.marigold],
+const FILLER_SPECS: Array<[number, number, string, string]> = [
+  [-LANE_EDGE_X - 1.3, -laneHalfLength + 1.2, PALETTE.deepRed, 'Khanna Achar Stall'],
+  [LANE_EDGE_X + 1.3, -laneHalfLength + 1.2, PALETTE.teal, 'Choti Khilone Dukaan'],
+  [-LANE_EDGE_X - 1.3, laneHalfLength - 4.2, PALETTE.marigold, 'Deepawali Mithai Corner'],
 ];
 
 export function FoodStreetZone() {
@@ -523,13 +552,14 @@ export function FoodStreetZone() {
       <ToyShop position={[-stallOffset, 0, 4]} rotation={[0, Math.PI / 2, 0]} />
       <AccessoriesShop position={[stallOffset, 0, 10]} rotation={[0, -Math.PI / 2, 0]} />
 
-      {FILLER_SPECS.map(([x, z, color], i) => (
+      {FILLER_SPECS.map(([x, z, color, name], i) => (
         <DressingStall
           key={i}
           position={[x, 0, z]}
           rotation={[0, i % 2 === 0 ? Math.PI / 2 : -Math.PI / 2, 0]}
           color={color}
           variant={i + 1}
+          name={name}
         />
       ))}
 

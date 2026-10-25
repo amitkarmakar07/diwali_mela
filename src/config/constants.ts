@@ -136,7 +136,9 @@ export const CULTURAL_STAGE = {
 
 export const CAROUSEL = {
   position: [-15, 0, -22] as [number, number, number],
-  roofRadius: 6.2,
+  // Wide, shallow tent canopy - noticeably wider than the platform (reference: Ghode Wala Jhoola).
+  roofRadius: 7.6,
+  canopyHeight: 2.4,
   platformRadius: 5.6,
   columnHeight: 4.6,
   horseCount: 8,

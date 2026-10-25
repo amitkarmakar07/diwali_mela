@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Text } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { PALETTE } from '../../config/constants';
-import { StringLights } from '../../world/Decor';
+import { StringLights, CandyAwning, Garland } from '../../world/Decor';
 
 const METAL = '#3a3240';
 const WOOD_DARK = '#2f2621';
@@ -93,10 +93,8 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
         </mesh>
       ))}
 
-      <mesh position={[0, 3.05, -0.1]} castShadow>
-        <boxGeometry args={[5.7, 0.12, 3.5]} />
-        <meshStandardMaterial color={awningColor} roughness={0.8} />
-      </mesh>
+      {/* Candy-striped awning over the booth, matching the reference stall design. */}
+      <CandyAwning position={[0, 3.05, -0.1]} width={5.7} depth={3.5} colorA={awningColor} />
       <mesh position={[0, 2.82, 1.62]}>
         <boxGeometry args={[5.7, 0.42, 0.1]} />
         <meshStandardMaterial color={awningColor} emissive={awningColor} emissiveIntensity={0.3} roughness={0.7} />
@@ -136,6 +134,9 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
       </Text>
 
       <StringLights from={[-2.5, 2.95, 1.45]} to={[2.5, 2.95, 1.45]} count={11} sag={0.5} />
+
+      {/* Marigold garland draped along the counter's front lip. */}
+      <Garland from={[-2.4, 1.08, 1.4]} to={[2.4, 1.08, 1.4]} count={9} sag={0.15} />
 
       <PrizeShelf position={[-1.75, 2.0, -1.5]} colors={PALETTE.bulbColors.slice(0, 3)} />
       <PrizeShelf position={[1.75, 2.0, -1.5]} colors={PALETTE.bulbColors.slice(3, 6)} />

@@ -1,0 +1,242 @@
+/* Title-gate overlay — full-bleed hero over the live 3D scene */
+
+.gate-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 1000;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 10, 31, 0.55) 0%,
+    rgba(11, 10, 31, 0.35) 40%,
+    rgba(11, 10, 31, 0.75) 100%
+  );
+}
+
+.gate-status {
+  position: absolute;
+  top: 1.75rem;
+  left: 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #ffd98a;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.gate-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffcc33;
+  box-shadow: 0 0 8px 2px rgba(255, 204, 51, 0.8);
+  animation: gate-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes gate-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.gate-season {
+  position: absolute;
+  top: 1.75rem;
+  right: 1.75rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #cbbfe6;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.gate-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1.5rem;
+  max-width: 40rem;
+  text-align: center;
+}
+
+.gate-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gate-title-small {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: #e8d9ff;
+  opacity: 0.85;
+  margin-bottom: 0.25rem;
+}
+
+.gate-title-big {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(3.25rem, 11vw, 6.5rem);
+  font-weight: 400;
+  line-height: 1;
+  background: linear-gradient(170deg, #fff4d0 0%, #ffcc33 45%, #ff8c1a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 28px rgba(255, 170, 60, 0.45))
+    drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
+}
+
+.gate-invite {
+  font-family: var(--font-ui);
+  font-style: italic;
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: #e4d9c8;
+  max-width: 32rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.gate-cta {
+  margin-top: 0.5rem;
+  padding: 1rem 2.75rem;
+  font-family: var(--font-ui);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffcc33 0%, #ffb24d 100%);
+  color: #0b0a1f;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(255, 204, 51, 0.25);
+}
+
+.gate-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255, 204, 51, 0.4);
+}
+
+.gate-cta:active {
+  transform: translateY(0);
+}
+
+.gate-features {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #d9cdbb;
+  opacity: 0.8;
+}
+
+.gate-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.gate-disclosure {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: #cbbfe6;
+}
+
+.gate-disclosure summary {
+  cursor: pointer;
+  opacity: 0.75;
+  letter-spacing: 0.04em;
+  list-style: none;
+}
+
+.gate-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.gate-disclosure summary:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.gate-disclosure-body {
+  margin-top: 0.5rem;
+  max-width: 20rem;
+  line-height: 1.6;
+  color: #d9cdbb;
+  opacity: 0.85;
+  text-align: left;
+}
+
+.gate-note {
+  position: absolute;
+  bottom: 2.75rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: #cbbfe6;
+  opacity: 0.7;
+  padding: 0 1rem;
+}
+
+.gate-credit {
+  position: absolute;
+  bottom: 1rem;
+  right: 1.25rem;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  color: #cbbfe6;
+  opacity: 0.45;
+}
+
+@media (max-width: 600px) {
+  .gate-status,
+  .gate-season {
+    top: 1rem;
+  }
+
+  .gate-status {
+    left: 1rem;
+  }
+
+  .gate-season {
+    right: 1rem;
+    font-size: 0.65rem;
+  }
+
+  .gate-center {
+    gap: 0.9rem;
+  }
+
+  .gate-invite {
+    font-size: 1rem;
+  }
+
+  .gate-note {
+    bottom: 3.5rem;
+    font-size: 0.7rem;
+  }
+
+  .gate-credit {
+    bottom: 0.5rem;
+    right: 0.75rem;
+  }
+}
