@@ -56,10 +56,10 @@
   font-size: 0.85rem;
 }
 
-/* Hint text — top right */
+/* Hint text — top right, below the persistent control bar */
 .hud-hint {
   position: absolute;
-  top: 1.5rem;
+  top: 4.6rem;
   right: 1.5rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -67,6 +67,102 @@
   text-transform: uppercase;
   color: rgba(246, 236, 216, 0.65);
   pointer-events: none;
+}
+
+/* Persistent control bar — top right, the HUD's other half to the bottom-right minimap */
+.hud-bar {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.6rem;
+  pointer-events: none;
+  z-index: 650;
+}
+
+.hud-bar-btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(26, 21, 56, 0.85);
+  border: 1px solid rgba(255, 204, 51, 0.35);
+  border-radius: 50px;
+  padding: 0.5rem 0.9rem;
+  color: #f6ecd8;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.hud-bar-btn:hover {
+  background: rgba(255, 204, 51, 0.15);
+  border-color: rgba(255, 204, 51, 0.55);
+  transform: translateY(-1px);
+}
+
+.hud-bar-btn svg {
+  flex-shrink: 0;
+}
+
+.hud-bar-photo {
+  gap: 0.75rem;
+}
+
+.hud-bar-btn-exit {
+  color: #ffcc33;
+  border-color: #ffcc33;
+}
+
+.hud-bar-save-msg {
+  pointer-events: none;
+  align-self: center;
+  font-size: 0.8rem;
+  color: rgba(246, 236, 216, 0.85);
+  background: rgba(11, 10, 31, 0.75);
+  padding: 0.5rem 0.9rem;
+  border-radius: 50px;
+  white-space: nowrap;
+}
+
+/* Settings panel rows */
+.hud-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.hud-settings-row label {
+  font-size: 0.95rem;
+  color: rgba(246, 236, 216, 0.9);
+}
+
+.hud-settings-row input[type='range'] {
+  flex: 1;
+  margin: 0 0.75rem;
+  accent-color: #ffcc33;
+}
+
+.hud-settings-row input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #ffcc33;
+  cursor: pointer;
+}
+
+.hud-settings-value {
+  min-width: 2.5rem;
+  text-align: right;
+  font-weight: 600;
+  color: #ffcc33;
+  font-size: 0.85rem;
 }
 
 /* Interaction prompt */
@@ -421,9 +517,31 @@
   }
 
   .hud-hint {
-    top: 1rem;
+    top: 3.6rem;
     right: 1rem;
     font-size: 0.85rem;
+  }
+
+  .hud-bar {
+    top: 1rem;
+    right: 1rem;
+    gap: 0.4rem;
+  }
+
+  .hud-bar-label {
+    display: none;
+  }
+
+  .hud-bar-btn {
+    padding: 0.55rem;
+  }
+
+  .hud-bar-photo .hud-bar-btn {
+    padding: 0.55rem 0.75rem;
+  }
+
+  .hud-settings-row {
+    flex-wrap: wrap;
   }
 
   .hud-interaction-prompt {

@@ -1,11 +1,13 @@
 import { useGame } from '../core/GameState';
+import { usePhotoMode } from './photoMode';
 import './minigame.css';
 
 export function MiniGameHUD() {
   const mode = useGame((s) => s.mode);
   const status = useGame((s) => s.gameStatus);
+  const photoActive = usePhotoMode((s) => s.active);
 
-  if (mode !== 'minigame' || !status) {
+  if (mode !== 'minigame' || !status || photoActive) {
     return null;
   }
 

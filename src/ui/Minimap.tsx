@@ -30,14 +30,19 @@ function worldToPct(x: number, z: number) {
   return { left, top };
 }
 
-export function Minimap() {
+interface MinimapProps {
+  /** Settings-panel toggle; defaults on so existing callers are unaffected. */
+  enabled?: boolean;
+}
+
+export function Minimap({ enabled = true }: MinimapProps) {
   const started = useGame((s) => s.started);
   const mode = useGame((s) => s.mode);
 
   const markerRef = useRef<HTMLDivElement>(null);
   const wedgeRef = useRef<HTMLDivElement>(null);
 
-  const visible = started && mode !== 'paused';
+  const visible = started && mode !== 'paused' && enabled;
 
   const zoneMarkers = useMemo(
     () => MAP_ZONES.map((z) => ({ ...z, ...worldToPct(z.x, z.z) })),

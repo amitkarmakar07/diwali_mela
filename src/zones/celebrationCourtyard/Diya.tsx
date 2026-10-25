@@ -9,14 +9,19 @@ interface DiyaProps {
   id: string;
   position: [number, number, number];
   golden?: boolean;
+  /** Starts already lit — used for diyas the player carries in and places. */
+  initialLit?: boolean;
+  /** False renders the flame as emissive-only with no point light; used to cap how many
+   * player-placed diyas may add a real light, since the player can place several. */
+  light?: boolean;
 }
 
 const CLAY = '#8a4a2d';
 const CLAY_RIM = '#6e3a22';
 const WICK = '#2b1b12';
 
-export function Diya({ id, position, golden = false }: DiyaProps) {
-  const [lit, setLit] = useState(false);
+export function Diya({ id, position, golden = false, initialLit = false, light = true }: DiyaProps) {
+  const [lit, setLit] = useState(initialLit);
   const flameRef = useRef<Mesh>(null);
   const lightRef = useRef<PointLight>(null);
   const phase = useRef(Math.random() * Math.PI * 2);
@@ -82,14 +87,16 @@ export function Diya({ id, position, golden = false }: DiyaProps) {
               toneMapped={false}
             />
           </mesh>
-          <pointLight
-            ref={lightRef}
-            position={[0, 0.3, 0]}
-            color={PALETTE.warm}
-            intensity={baseIntensity}
-            distance={7}
-            decay={2}
-          />
+          {light && (
+            <pointLight
+              ref={lightRef}
+              position={[0, 0.3, 0]}
+              color={PALETTE.warm}
+              intensity={baseIntensity}
+              distance={7}
+              decay={2}
+            />
+          )}
         </>
       )}
     </Interactable>

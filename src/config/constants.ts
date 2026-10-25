@@ -197,12 +197,32 @@ export const FIREWORKS = {
   trailLife: 0.5,
   cooldown: 0.45,
   launchPad: [ZONES.courtyard[0] - 2, 0, ZONES.courtyard[1] - 9] as [number, number, number],
-  showLaunchCount: 7,
+  /** Re-arm time for the manual finale trigger after one finishes. */
+  finaleCooldown: 20,
 };
 
 export const COURTYARD = {
   diyaCount: 8,
   litDiyaTriggersShow: 5,
+};
+
+export const DIYA_CARRY = {
+  /** Finite tray — this bounds how many carried diyas can ever exist at once. */
+  trayCount: 4,
+  /** Only this many placed-and-lit diyas get a real point light; the rest glow via emissive only. */
+  maxPlacedLights: 1,
+  trayPosition: [ZONES.courtyard[0] + 6.3, 0.95, ZONES.courtyard[1] + 4.3] as [number, number, number],
+  carryForwardOffset: 0.85,
+  carryDropOffset: 0.42,
+};
+
+export const SKY_LANTERNS = {
+  /** Hard cap on lanterns aloft at once — older ones are recycled before new ones launch. */
+  maxAloft: 10,
+  lifespan: 16,
+  riseSpeed: 1.1,
+  driftAmount: 0.9,
+  releaseCooldown: 0.6,
 };
 
 export const PALETTE = {

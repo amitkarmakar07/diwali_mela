@@ -1,0 +1,58 @@
+interface HudBarProps {
+  onHelp: () => void;
+  onPhoto: () => void;
+  onSettings: () => void;
+}
+
+/** Persistent top-right control row — the HUD's other half to the bottom-right minimap. */
+export function HudBar({ onHelp, onPhoto, onSettings }: HudBarProps) {
+  return (
+    <div className="hud-bar">
+      <button type="button" className="hud-bar-btn" onClick={onHelp} aria-label="Help" title="Help">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M9.4 9.3a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1 .9-1 1.7v.4" strokeLinecap="round" />
+          <circle cx="12" cy="16.8" r="0.6" fill="currentColor" stroke="none" />
+        </svg>
+        <span className="hud-bar-label">Help</span>
+      </button>
+
+      <button type="button" className="hud-bar-btn" onClick={onPhoto} aria-label="Photo mode" title="Photo mode">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+          <circle cx="12" cy="13" r="3.2" />
+        </svg>
+        <span className="hud-bar-label">Photo</span>
+      </button>
+
+      <button type="button" className="hud-bar-btn" onClick={onSettings} aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1l-.3-2.4H9.9l-.3 2.4a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L5.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.8 1.7 1l.3 2.4h4.2l.3-2.4c.6-.2 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5z" />
+        </svg>
+        <span className="hud-bar-label">Settings</span>
+      </button>
+    </div>
+  );
+}
+
+interface PhotoModeBarProps {
+  onExit: () => void;
+  onSave: () => void;
+  saveMessage: string | null;
+}
+
+/** Replaces HudBar while photo mode hides the rest of the chrome — still needs an exit. */
+export function PhotoModeBar({ onExit, onSave, saveMessage }: PhotoModeBarProps) {
+  return (
+    <div className="hud-bar hud-bar-photo">
+      {saveMessage && <span className="hud-bar-save-msg">{saveMessage}</span>}
+      <button type="button" className="hud-bar-btn hud-bar-btn-save" onClick={onSave}>
+        Save photo
+      </button>
+      <button type="button" className="hud-bar-btn hud-bar-btn-exit" onClick={onExit}>
+        Exit photo mode
+      </button>
+    </div>
+  );
+}

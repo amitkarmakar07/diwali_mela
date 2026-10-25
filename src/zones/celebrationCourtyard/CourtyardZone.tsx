@@ -8,6 +8,9 @@ import { DoubleSide } from "three";
 import { ZONES, COURTYARD, PALETTE } from "../../config/constants";
 import { Diya } from "./Diya";
 import { FireworksSystem } from "./FireworksSystem";
+import { DiyaCarrySystem } from "./DiyaCarrySystem";
+import { RangoliCreator } from "./RangoliCreator";
+import { SkyLanterns } from "./SkyLanterns";
 import { LampPost } from "../../world/Decor";
 
 const [cx, cz] = ZONES.courtyard;
@@ -24,12 +27,15 @@ const SEG_WIDTH = ((Math.PI * 2 * WALL_RADIUS) / WALL_SEGMENTS) * 0.92;
 const STAND_POS: [number, number, number] = [6, 0, 4];
 const STAND_TOP_Y = 0.95;
 
+// The ring at 0.9-1.25 is the interactive rangoli (RangoliCreator) instead of a
+// static one, so it is deliberately left out of this always-drawn list.
 const RANGOLI_RINGS: Array<{ inner: number; outer: number; color: string }> = [
   { inner: 0.3, outer: 0.6, color: PALETTE.gold },
-  { inner: 0.9, outer: 1.25, color: PALETTE.marigold },
   { inner: 1.55, outer: 1.95, color: PALETTE.magenta },
   { inner: 2.25, outer: 2.7, color: PALETTE.teal },
 ];
+
+const SKY_LANTERN_RELEASE: [number, number, number] = [-7, 0, -6];
 
 const STACKED_DIYA_OFFSETS: Array<[number, number]> = [
   [-0.5, 0.15],
@@ -81,8 +87,9 @@ export function CourtyardZone() {
 
   return (
     <>
-      {/* Simulated in world space, so it must sit outside the courtyard's offset group. */}
+      {/* Simulated in world space, so these must sit outside the courtyard's offset group. */}
       <FireworksSystem />
+      <DiyaCarrySystem />
       <group position={[cx, 0, cz]}>
         <mesh
           position={[0, 0.03, 0]}
@@ -180,6 +187,9 @@ export function CourtyardZone() {
           <Diya key={i} id={`courtyard-diya-${i}`} position={pos} />
         ))}
         <Diya id="golden-diya" position={[8.4, 0, 4.6]} golden />
+
+        <RangoliCreator position={[0, 0, 0]} />
+        <SkyLanterns releasePosition={SKY_LANTERN_RELEASE} />
 
         <LampPost
           position={[-9.32, 0, 11.11]}
