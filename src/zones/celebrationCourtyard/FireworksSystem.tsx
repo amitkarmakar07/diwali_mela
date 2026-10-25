@@ -7,11 +7,14 @@ import {
   CanvasTexture,
   Color,
   DoubleSide,
+  Group,
   Points,
   ShaderMaterial,
   Vector3,
 } from 'three';
-import { FIREWORKS, COURTYARD, PALETTE } from '../../config/constants';
+import type { PointLight } from 'three';
+import { FIREWORKS, COURTYARD, CRACKERS, PALETTE } from '../../config/constants';
+import { playCrackerSound } from '../../audio/audioManager';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
 
@@ -19,12 +22,24 @@ const MAX = FIREWORKS.maxParticles;
 const KIND_ROCKET = 1;
 const KIND_TRAIL = 2;
 const KIND_BURST = 3;
+const KIND_SPARK = 4;
 const TRAIL_INTERVAL = 0.045;
 const ROCKET_COLOR = PALETTE.warmBright;
 const TRAIL_COLOR = PALETTE.warm;
 
 const scratchDir = new Vector3();
 const scratchColor = new Color();
+
+const CRACKER_ROCKET_POS: [number, number, number] = [
+  CRACKERS.areaCenter[0] + CRACKERS.rocketOffsetX,
+  0,
+  CRACKERS.areaCenter[2],
+];
+const CRACKER_CHARKHI_POS: [number, number, number] = [
+  CRACKERS.areaCenter[0] + CRACKERS.charkhiOffsetX,
+  0,
+  CRACKERS.areaCenter[2],
+];
 
 interface FinaleStage {
   duration: number;
@@ -189,6 +204,32 @@ function spawnTrail(pool: Pool, x: number, y: number, z: number) {
   pool.size[i] = pool.baseSize[i];
 }
 
+// Charkhi sparks: thrown off a spinning disc tangentially, same bounded pool and
+// physics branch as trail/burst particles (gravity, fade), just a short fiery life.
+function spawnSpark(pool: Pool, x: number, y: number, z: number, vx: number, vy: number, vz: number) {
+  const i = allocSlot(pool);
+  if (i === null) return;
+  const i3 = i * 3;
+  pool.position[i3] = x;
+  pool.position[i3 + 1] = y;
+  pool.position[i3 + 2] = z;
+  pool.velocity[i3] = vx;
+  pool.velocity[i3 + 1] = vy;
+  pool.velocity[i3 + 2] = vz;
+  pool.kind[i] = KIND_SPARK;
+  const life = FIREWORKS.sparkLife * (0.7 + Math.random() * 0.5);
+  pool.life[i] = life;
+  pool.maxLife[i] = life;
+  pool.baseSize[i] = 2.5 + Math.random() * 1.5;
+  scratchColor.set(Math.random() < 0.5 ? PALETTE.gold : PALETTE.warmBright);
+  pool.customColor[i3] = scratchColor.r;
+  pool.customColor[i3 + 1] = scratchColor.g;
+  pool.customColor[i3 + 2] = scratchColor.b;
+  pool.alive[i] = 1;
+  pool.alpha[i] = 1;
+  pool.size[i] = pool.baseSize[i];
+}
+
 function spawnBurst(
   pool: Pool,
   x: number,
@@ -277,6 +318,23 @@ export function FireworksSystem() {
 
   const litCount = useGame((s) => s.litDiyaCount);
 
+  const rocketCoolingRef = useRef(false);
+  const rocketCooldownTimeRef = useRef(0);
+  const [rocketReady, setRocketReady] = useState(true);
+
+  // Charkhi: a ground spinner. phaseRef drives the hot per-frame checks; the mirrored
+  // state only changes at phase transitions, so the prompt label can react without
+  // re-running the Interactable registration effect every frame.
+  const charkhiPhaseRef = useRef<'ready' | 'spinning' | 'cooling'>('ready');
+  const charkhiSpinTimeRef = useRef(0);
+  const charkhiCooldownTimeRef = useRef(0);
+  const charkhiAngleRef = useRef(0);
+  const charkhiSparkTimerRef = useRef(0);
+  const charkhiFlickerPhaseRef = useRef(0);
+  const charkhiGroupRef = useRef<Group>(null);
+  const charkhiLightRef = useRef<PointLight>(null);
+  const [charkhiPhase, setCharkhiPhase] = useState<'ready' | 'spinning' | 'cooling'>('ready');
+
   const startFinale = () => {
     finaleActiveRef.current = true;
     finaleStageIndexRef.current = 0;
@@ -324,6 +382,72 @@ export function FireworksSystem() {
           finaleStageTimeRef.current = FINALE_STAGES[nextStage].duration;
           finaleTickTimerRef.current = 0;
         }
+      }
+    }
+
+    if (rocketCoolingRef.current) {
+      rocketCooldownTimeRef.current -= delta;
+      if (rocketCooldownTimeRef.current <= 0) {
+        rocketCoolingRef.current = false;
+        setRocketReady(true);
+      }
+    }
+
+    if (charkhiPhaseRef.current === 'spinning') {
+      charkhiSpinTimeRef.current -= delta;
+      const remaining = charkhiSpinTimeRef.current;
+      // Ease the spin down over the last 0.6s instead of a dead stop.
+      const speedScale = remaining < 0.6 ? Math.max(remaining, 0) / 0.6 : 1;
+      charkhiAngleRef.current += delta * CRACKERS.charkhiSpinSpeed * speedScale;
+      if (charkhiGroupRef.current) charkhiGroupRef.current.rotation.y = charkhiAngleRef.current;
+
+      charkhiSparkTimerRef.current -= delta;
+      if (charkhiSparkTimerRef.current <= 0) {
+        charkhiSparkTimerRef.current = CRACKERS.charkhiSparkInterval;
+        const [scx, , scz] = CRACKER_CHARKHI_POS;
+        for (let k = 0; k < CRACKERS.charkhiSparksPerTick; k++) {
+          const a = charkhiAngleRef.current + (k % 2 === 0 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.3;
+          const rx = Math.cos(a) * CRACKERS.charkhiRadius;
+          const rz = Math.sin(a) * CRACKERS.charkhiRadius;
+          const tangentialX = -Math.sin(a) * CRACKERS.charkhiSpinSpeed * speedScale * 0.07;
+          const tangentialZ = Math.cos(a) * CRACKERS.charkhiSpinSpeed * speedScale * 0.07;
+          spawnSpark(
+            pool,
+            scx + rx,
+            1.0,
+            scz + rz,
+            tangentialX + Math.cos(a) * 0.7,
+            1.1 + Math.random() * 1.0,
+            tangentialZ + Math.sin(a) * 0.7,
+          );
+        }
+      }
+
+      if (charkhiSpinTimeRef.current <= 0) {
+        charkhiPhaseRef.current = 'cooling';
+        charkhiCooldownTimeRef.current = CRACKERS.charkhiCooldown;
+        setCharkhiPhase('cooling');
+      }
+    } else if (charkhiPhaseRef.current === 'cooling') {
+      charkhiCooldownTimeRef.current -= delta;
+      if (charkhiCooldownTimeRef.current <= 0) {
+        charkhiPhaseRef.current = 'ready';
+        setCharkhiPhase('ready');
+      }
+    }
+
+    // The one new light this system adds: lit only while the charkhi burns, reused
+    // rather than a per-spark light (sparks glow via the additive particle texture).
+    if (charkhiLightRef.current) {
+      if (charkhiPhaseRef.current === 'spinning') {
+        charkhiFlickerPhaseRef.current += delta * 9;
+        const flicker =
+          0.8 +
+          Math.sin(charkhiFlickerPhaseRef.current) * 0.15 +
+          Math.sin(charkhiFlickerPhaseRef.current * 2.3) * 0.08;
+        charkhiLightRef.current.intensity = 14 * flicker;
+      } else {
+        charkhiLightRef.current.intensity = 0;
       }
     }
 
@@ -390,6 +514,33 @@ export function FireworksSystem() {
     startFinale();
   };
 
+  const handleCrackerRocket = () => {
+    if (rocketCoolingRef.current) return;
+    rocketCoolingRef.current = true;
+    rocketCooldownTimeRef.current = CRACKERS.rocketCooldown;
+    setRocketReady(false);
+    playCrackerSound();
+    const [px, , pz] = CRACKER_ROCKET_POS;
+    launchRocket(pool, px, pz, 20 + Math.random() * 10);
+  };
+
+  const handleCharkhi = () => {
+    if (charkhiPhaseRef.current !== 'ready') return;
+    charkhiPhaseRef.current = 'spinning';
+    charkhiSpinTimeRef.current = CRACKERS.charkhiSpinSeconds;
+    charkhiSparkTimerRef.current = 0;
+    playCrackerSound();
+    setCharkhiPhase('spinning');
+  };
+
+  const rocketLabel = rocketReady ? 'Light a Rocket' : 'Rocket Cooling Down';
+  const charkhiLabel =
+    charkhiPhase === 'spinning'
+      ? 'Charkhi Spinning...'
+      : charkhiPhase === 'cooling'
+        ? 'Charkhi Cooling Down'
+        : 'Light the Charkhi';
+
   return (
     <>
       <primitive object={pool.points} />
@@ -432,6 +583,80 @@ export function FireworksSystem() {
             side={DoubleSide}
           />
         </mesh>
+      </Interactable>
+
+      <Interactable
+        id="cracker-rocket"
+        position={CRACKER_ROCKET_POS}
+        radius={2}
+        label={rocketLabel}
+        onInteract={handleCrackerRocket}
+      >
+        <mesh position={[0, 0.05, 0]} receiveShadow>
+          <cylinderGeometry args={[0.55, 0.65, 0.1, 12]} />
+          <meshStandardMaterial color="#3a2f44" roughness={0.9} />
+        </mesh>
+        {[-0.18, 0, 0.18].map((ox, idx) => (
+          <mesh key={idx} position={[ox, 0.32, 0]}>
+            <cylinderGeometry args={[0.07, 0.09, 0.5, 8]} />
+            <meshStandardMaterial
+              color={PALETTE.deepRed}
+              emissive={PALETTE.marigold}
+              emissiveIntensity={0.25}
+              roughness={0.6}
+            />
+          </mesh>
+        ))}
+      </Interactable>
+
+      <Interactable
+        id="cracker-charkhi"
+        position={CRACKER_CHARKHI_POS}
+        radius={2}
+        label={charkhiLabel}
+        onInteract={handleCharkhi}
+      >
+        <mesh position={[0, 0.5, 0]}>
+          <cylinderGeometry args={[0.05, 0.06, 1.0, 8]} />
+          <meshStandardMaterial color="#4a3a33" roughness={0.85} />
+        </mesh>
+        <group ref={charkhiGroupRef} position={[0, 1.0, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[CRACKERS.charkhiRadius, CRACKERS.charkhiRadius, 0.05, 16]} />
+            <meshStandardMaterial
+              color="#2b2235"
+              emissive={PALETTE.marigold}
+              emissiveIntensity={charkhiPhase === 'spinning' ? 0.6 : 0.15}
+              roughness={0.6}
+            />
+          </mesh>
+          {[0, 1, 2, 3].map((k) => {
+            const a = (k / 4) * Math.PI * 2;
+            return (
+              <mesh
+                key={k}
+                position={[Math.cos(a) * CRACKERS.charkhiRadius * 0.6, 0, Math.sin(a) * CRACKERS.charkhiRadius * 0.6]}
+                rotation={[0, -a, 0]}
+              >
+                <boxGeometry args={[CRACKERS.charkhiRadius * 0.9, 0.04, 0.05]} />
+                <meshStandardMaterial
+                  color={PALETTE.gold}
+                  emissive={PALETTE.gold}
+                  emissiveIntensity={charkhiPhase === 'spinning' ? 1.2 : 0.2}
+                  roughness={0.5}
+                />
+              </mesh>
+            );
+          })}
+        </group>
+        <pointLight
+          ref={charkhiLightRef}
+          position={[0, 1.0, 0]}
+          color={PALETTE.warm}
+          intensity={0}
+          distance={9}
+          decay={1.8}
+        />
       </Interactable>
     </>
   );

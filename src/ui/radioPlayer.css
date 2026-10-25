@@ -1,0 +1,112 @@
+/* Mela Radio widget — bottom-left, matching the HUD's warm-gold-on-night-purple language */
+
+.radio-player {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  pointer-events: auto;
+  z-index: 650;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(26, 21, 56, 0.85);
+  border: 1px solid rgba(255, 204, 51, 0.35);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  min-width: 11.5rem;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-ui);
+  color: #f6ecd8;
+}
+
+.radio-player-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(246, 236, 216, 0.65);
+}
+
+.radio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffcc33;
+  box-shadow: 0 0 8px rgba(255, 204, 51, 0.8);
+}
+
+.radio-track-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: #ffcc33;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 10px rgba(255, 204, 51, 0.25);
+}
+
+.radio-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.radio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: rgba(255, 204, 51, 0.1);
+  border: 1px solid rgba(255, 204, 51, 0.3);
+  border-radius: 50%;
+  color: #f6ecd8;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.radio-btn:hover {
+  background: rgba(255, 204, 51, 0.2);
+  border-color: rgba(255, 204, 51, 0.55);
+  transform: translateY(-1px);
+}
+
+.radio-btn-play {
+  width: 2.3rem;
+  height: 2.3rem;
+  background: linear-gradient(135deg, #ffcc33 0%, #ffb24d 100%);
+  color: #0b0a1f;
+  border-color: transparent;
+}
+
+.radio-btn-play:hover {
+  filter: brightness(1.1);
+}
+
+@media (max-width: 800px) {
+  .radio-player {
+    bottom: 1rem;
+    left: 1rem;
+    min-width: 9.5rem;
+    padding: 0.5rem 0.65rem;
+  }
+
+  .radio-track-title {
+    font-size: 0.9rem;
+  }
+}
+
+.radio-keys {
+  margin-top: 0.35rem;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: rgba(246, 236, 216, 0.45);
+}

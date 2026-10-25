@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Text } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { PALETTE } from '../../config/constants';
-import { StringLights, CandyAwning, Garland } from '../../world/Decor';
+import { StringLights, CandyAwning, Garland, ClothSkirt, GlowBackdrop } from '../../world/Decor';
 
 const METAL = '#3a3240';
 const WOOD_DARK = '#2f2621';
@@ -70,10 +70,6 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
         </mesh>
 
         <CuboidCollider args={[2.6, 1.45, 0.08]} position={[0, 1.45, -1.75]} />
-        <mesh position={[0, 1.45, -1.75]} receiveShadow>
-          <boxGeometry args={[5.2, 2.9, 0.16]} />
-          <meshStandardMaterial color="#241c33" roughness={0.9} />
-        </mesh>
 
         {[-2.56, 2.56].map((x) => (
           <group key={x}>
@@ -86,6 +82,9 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
         ))}
       </RigidBody>
 
+      {/* Glowing striped backdrop behind the goods — visual only, the collider above handles the wall. */}
+      <GlowBackdrop position={[0, 1.45, -1.75]} width={5.2} height={2.9} />
+
       {POSTS.map(([x, z], i) => (
         <mesh key={i} position={[x, 1.5, z]} castShadow>
           <cylinderGeometry args={[0.07, 0.07, 3.0, 8]} />
@@ -93,8 +92,8 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
         </mesh>
       ))}
 
-      {/* Candy-striped awning over the booth, matching the reference stall design. */}
-      <CandyAwning position={[0, 3.05, -0.1]} width={5.7} depth={3.5} colorA={awningColor} />
+      {/* Candy-striped awning over the booth — stripes always deep red/cream per the reference; awningColor flavours the trim strip. */}
+      <CandyAwning position={[0, 3.05, -0.1]} width={5.7} depth={3.5} />
       <mesh position={[0, 2.82, 1.62]}>
         <boxGeometry args={[5.7, 0.42, 0.1]} />
         <meshStandardMaterial color={awningColor} emissive={awningColor} emissiveIntensity={0.3} roughness={0.7} />
@@ -106,6 +105,11 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
         </mesh>
       ))}
 
+      {/* Gold border frame behind the maroon nameboard, matching the reference signage. */}
+      <mesh position={[0, 3.62, 0.885]} rotation={[-0.12, 0, 0]}>
+        <boxGeometry args={[5.1, 0.95, 0.08]} />
+        <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.gold} emissiveIntensity={0.25} metalness={0.4} roughness={0.5} />
+      </mesh>
       <mesh position={[0, 3.62, 0.9]} rotation={[-0.12, 0, 0]} castShadow>
         <boxGeometry args={[5.0, 0.86, 0.12]} />
         <meshStandardMaterial color={PALETTE.deepRed} roughness={0.8} />
@@ -135,8 +139,11 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
 
       <StringLights from={[-2.5, 2.95, 1.45]} to={[2.5, 2.95, 1.45]} count={11} sag={0.5} />
 
-      {/* Marigold garland draped along the counter's front lip. */}
-      <Garland from={[-2.4, 1.08, 1.4]} to={[2.4, 1.08, 1.4]} count={9} sag={0.15} />
+      {/* Patterned cloth skirt below the counter's front lip. */}
+      <ClothSkirt position={[0, 0.28, 1.43]} width={5.0} height={0.5} stripes={6} />
+
+      {/* Marigold garland swagged along the counter's front lip, with brass bells at the dips. */}
+      <Garland from={[-2.4, 1.08, 1.4]} to={[2.4, 1.08, 1.4]} count={14} sag={0.16} bellCount={4} swags={4} />
 
       <PrizeShelf position={[-1.75, 2.0, -1.5]} colors={PALETTE.bulbColors.slice(0, 3)} />
       <PrizeShelf position={[1.75, 2.0, -1.5]} colors={PALETTE.bulbColors.slice(3, 6)} />

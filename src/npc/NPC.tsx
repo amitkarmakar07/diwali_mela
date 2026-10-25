@@ -15,7 +15,18 @@ interface NPCProps {
   prop?: NPCProp;
   /** Fraction along the first leg to start at, so a group doesn't stack on one point. */
   startT?: number;
+  /** Per-waypoint pause in seconds once reached, before advancing — browsing a stall
+   * front or shuffling forward in a queue. Same length as waypoints; 0/undefined = no pause. */
+  dwellTimes?: number[];
+  /** Tilts the body up on a shared, periodic cue — a cheap stand-in for "the crowd
+   * notices something overhead" that doesn't need to know anything about the fireworks system. */
+  reactsToSky?: boolean;
 }
+
+/** Seconds between look-up pulses, and how long each one lasts. */
+const SKY_EVENT_PERIOD = 17;
+const SKY_EVENT_DURATION = 3.2;
+const SKY_LOOK_ANGLE = 0.5;
 
 export function NPC({
   mode,
@@ -26,6 +37,8 @@ export function NPC({
   facing = 0,
   prop,
   startT = 0,
+  dwellTimes,
+  reactsToSky,
 }: NPCProps) {
   const root = useRef<Group>(null);
   const leftLeg = useRef<Group>(null);
@@ -54,14 +67,16 @@ export function NPC({
   const legRotation: [number, number, number] = mode === 'seated' ? [0.95, 0, 0] : [0, 0, 0];
 
   // Starting mid-leg means the next target is the leg's end, not the leg's start.
-  const walk = useRef({ index: startT > 0 ? 1 : 0, x: start[0], z: start[1], yaw: facing, t: 0 });
+  // `pause` counts down a dwell at the current waypoint (browsing/queueing); 0 = keep walking.
+  const walk = useRef({ index: startT > 0 ? 1 : 0, x: start[0], z: start[1], yaw: facing, t: 0, pause: 0 });
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const g = root.current;
     if (!g) return;
 
     const s = walk.current;
     s.t += delta;
+    let paused = false;
 
     if (mode === 'walk' && waypoints && waypoints.length >= 2) {
       const [tx, tz] = waypoints[s.index];
@@ -70,7 +85,19 @@ export function NPC({
       const dist = Math.hypot(dx, dz);
 
       if (dist < 0.4) {
-        s.index = (s.index + 1) % waypoints.length;
+        if (s.pause > 0) {
+          s.pause -= delta;
+          paused = true;
+          if (s.pause <= 0) s.index = (s.index + 1) % waypoints.length;
+        } else {
+          const dwell = dwellTimes?.[s.index] ?? 0;
+          if (dwell > 0) {
+            s.pause = dwell;
+            paused = true;
+          } else {
+            s.index = (s.index + 1) % waypoints.length;
+          }
+        }
       } else {
         const step = Math.min((speed * delta) / dist, 1);
         s.x += dx * step;
@@ -81,13 +108,22 @@ export function NPC({
         s.yaw += diff * Math.min(delta * 4, 1);
       }
 
-      const stride = Math.sin(s.t * speed * 3.1 + phase);
-      const swing = stride * 0.42;
-      if (leftLeg.current) leftLeg.current.rotation.x = swing;
-      if (rightLeg.current) rightLeg.current.rotation.x = -swing;
-      if (leftArm.current) leftArm.current.rotation.x = -swing * 0.6;
-      if (rightArm.current) rightArm.current.rotation.x = swing * 0.6;
-      g.position.y = seatedDrop + Math.abs(stride) * 0.045;
+      if (paused) {
+        const breathe = Math.sin(s.t * 1.1 + phase);
+        g.position.y = seatedDrop + breathe * 0.022;
+        if (leftLeg.current) leftLeg.current.rotation.x = 0;
+        if (rightLeg.current) rightLeg.current.rotation.x = 0;
+        if (leftArm.current) leftArm.current.rotation.x = breathe * 0.05;
+        if (rightArm.current) rightArm.current.rotation.x = -breathe * 0.05;
+      } else {
+        const stride = Math.sin(s.t * speed * 3.1 + phase);
+        const swing = stride * 0.42;
+        if (leftLeg.current) leftLeg.current.rotation.x = swing;
+        if (rightLeg.current) rightLeg.current.rotation.x = -swing;
+        if (leftArm.current) leftArm.current.rotation.x = -swing * 0.6;
+        if (rightArm.current) rightArm.current.rotation.x = swing * 0.6;
+        g.position.y = seatedDrop + Math.abs(stride) * 0.045;
+      }
     } else {
       const breathe = Math.sin(s.t * 1.1 + phase);
       g.position.y = seatedDrop + breathe * 0.022;
@@ -99,6 +135,16 @@ export function NPC({
     g.position.x = s.x;
     g.position.z = s.z;
     g.rotation.y = s.yaw;
+
+    // Shared clock (not per-instance phase) so reacting NPCs turn up together, in sync
+    // with each other, rather than each on its own random beat.
+    if (reactsToSky) {
+      const cyclePos = state.clock.elapsedTime % SKY_EVENT_PERIOD;
+      g.rotation.x =
+        cyclePos < SKY_EVENT_DURATION
+          ? Math.sin((cyclePos / SKY_EVENT_DURATION) * Math.PI) * SKY_LOOK_ANGLE
+          : 0;
+    }
   });
 
   return (

@@ -20,6 +20,7 @@ export interface WalkerSpec {
   color: string;
   startT: number;
   prop?: NPCProp;
+  dwellTimes?: number[];
 }
 
 export interface IdlerSpec {
@@ -27,6 +28,7 @@ export interface IdlerSpec {
   color: string;
   facing: number;
   prop?: NPCProp;
+  reactsToSky?: boolean;
 }
 
 // Cursors advance once at module load, so colours and props vary across the whole
@@ -66,6 +68,47 @@ function makeGroup(base: [number, number][], count: number, baseSpeed: number): 
       color: nextColor(),
       startT: i * 0.06,
       prop: nextProp(),
+    };
+  });
+}
+
+/** Wanders between a couple of stall fronts, pausing at each as if looking at the goods. */
+function makeBrowsers(
+  stops: [number, number][],
+  count: number,
+  baseSpeed: number,
+  dwell: number,
+): WalkerSpec[] {
+  return Array.from({ length: count }, (_, i) => ({
+    waypoints: stops,
+    speed: baseSpeed + ((i % 3) - 1) * 0.05,
+    color: nextColor(),
+    startT: i * 0.4,
+    prop: nextProp(),
+    dwellTimes: stops.map((_, j) => dwell + ((i + j) % 2) * 0.8),
+  }));
+}
+
+/** A short line that creeps toward the serve point and resets — reads as a queue
+ * shuffling forward without scripting a hand-off between individual bodies. */
+function makeQueue(
+  servePoint: [number, number],
+  awayDir: [number, number],
+  count: number,
+): WalkerSpec[] {
+  return Array.from({ length: count }, (_, i) => {
+    const gap = 0.75 * (i + 1);
+    const back: [number, number] = [
+      servePoint[0] + awayDir[0] * gap,
+      servePoint[1] + awayDir[1] * gap,
+    ];
+    return {
+      waypoints: [back, servePoint],
+      speed: 0.4,
+      color: nextColor(),
+      startT: 0,
+      prop: nextProp(),
+      dwellTimes: [1.4 + i * 0.35, 2.2],
     };
   });
 }
@@ -156,6 +199,31 @@ export const npcWalkers: WalkerSpec[] = [
     2,
     0.9,
   ),
+  // Queued at the food street counters. The serve point stands clear of the counter —
+  // the stalls themselves sit at x = -23.6 and -36.4, so queueing on those exact
+  // coordinates would put the line inside the stall.
+  ...makeQueue([-25.8, 2], [-1, 0], 2),
+  ...makeQueue([-34.2, 11], [1, 0], 2),
+  // Browsing the promenade stalls from the path side. Stalls are at x = +-10.5 and
+  // the browse stops must stay on the walkway, not on the stall itself.
+  ...makeBrowsers(
+    [
+      [8.2, 24],
+      [8.2, 6],
+    ],
+    2,
+    0.5,
+    2.8,
+  ),
+  ...makeBrowsers(
+    [
+      [-8.2, 15],
+      [-8.2, 33],
+    ],
+    2,
+    0.5,
+    2.8,
+  ),
 ];
 
 export const npcIdlers: IdlerSpec[] = [
@@ -163,14 +231,8 @@ export const npcIdlers: IdlerSpec[] = [
   ...makeCluster([-30, -29], 3, 2.9, [-30, -38]),
   ...makeCluster([-15, -15.5], 3, 2.6, [-15, -22]),
   ...makeCluster([-45, -16.5], 2, 2.5, [-45, -24]),
-  // Gathered in the courtyard where the diyas and fireworks are.
-  ...makeCluster([28, -27], 3, 3.0, [28, -34]),
-  // Queued at the food street counters.
-  ...makeCluster([-25.8, 2], 2, 1.4, [-23.6, 2]),
-  ...makeCluster([-34.2, 11], 2, 1.4, [-36.4, 11]),
-  // Browsing the promenade stalls.
-  ...makeCluster([8.6, 24], 2, 1.8, [10.5, 24]),
-  ...makeCluster([-8.6, 15], 2, 1.8, [-10.5, 15]),
+  // Gathered in the courtyard where the diyas and fireworks are — they look up when the sky lights up.
+  ...makeCluster([28, -27], 3, 3.0, [28, -34]).map((n) => ({ ...n, reactsToSky: true })),
   // Taking in the arch on the way in.
   ...makeCluster([0, 44], 3, 3.2, [0, 30]),
 ];

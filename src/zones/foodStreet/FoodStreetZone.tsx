@@ -6,7 +6,17 @@ import type { Group, Mesh, MeshStandardMaterial } from 'three';
 import { FOOD_STREET, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { LampPost, StringLights, Banner, Bunting, DressingStall, CandyAwning, Garland } from '../../world/Decor';
+import {
+  LampPost,
+  StringLights,
+  Banner,
+  Bunting,
+  DressingStall,
+  CandyAwning,
+  Garland,
+  ClothSkirt,
+  GlowBackdrop,
+} from '../../world/Decor';
 
 const { laneHalfLength, laneWidth, stallOffset, linkZ, position } = FOOD_STREET;
 const LOCAL_LINK_Z = linkZ - position[2];
@@ -207,13 +217,21 @@ function StallFrame({
         </mesh>
       ))}
 
-      {/* Candy-striped awning over the counter, matching the reference stall design. */}
-      <CandyAwning position={[0, 2.25, -0.2]} rotation={[Math.PI / 9, 0, 0]} width={3.2} depth={1.1} colorA={awningColor} />
+      {/* Candy-striped awning over the counter — stripes always deep red/cream per the reference; awningColor flavours the trim strip under its lip instead. */}
+      <CandyAwning position={[0, 2.25, -0.2]} rotation={[Math.PI / 9, 0, 0]} width={3.2} depth={1.1} stripes={8} />
+      <mesh position={[0, 2.46, 0.34]}>
+        <boxGeometry args={[3.2, 0.08, 0.04]} />
+        <meshStandardMaterial color={awningColor} emissive={awningColor} emissiveIntensity={0.3} roughness={0.7} />
+      </mesh>
 
-      {/* Illuminated signboard with the shop's name, plus a warm bulb row along the awning edge. */}
+      {/* Illuminated signboard: deep maroon panel, gold border frame, warm bulb row along the awning edge. */}
+      <mesh position={[0, 2.68, 0.335]}>
+        <boxGeometry args={[3.1, 0.58, 0.05]} />
+        <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.gold} emissiveIntensity={0.25} metalness={0.4} roughness={0.5} />
+      </mesh>
       <mesh position={[0, 2.68, 0.35]}>
         <boxGeometry args={[3.0, 0.5, 0.08]} />
-        <meshStandardMaterial color="#241c33" roughness={0.9} />
+        <meshStandardMaterial color={PALETTE.deepRed} roughness={0.85} />
       </mesh>
       <Text
         position={[0, 2.68, 0.4]}
@@ -226,10 +244,23 @@ function StallFrame({
       >
         {name}
       </Text>
-      <StringLights from={[-1.5, 2.0, 0.42]} to={[1.5, 2.0, 0.42]} count={5} sag={0.08} />
+      <StringLights from={[-1.5, 2.0, 0.42]} to={[1.5, 2.0, 0.42]} count={9} sag={0.08} />
 
-      {/* Marigold garland draped along the counter's front lip. */}
-      <Garland from={[-1.3, counterSize[1] + 0.08, 0.5]} to={[1.3, counterSize[1] + 0.08, 0.5]} count={6} sag={0.12} />
+      {/* Glowing striped backdrop behind the goods, on the far side from the counter front. */}
+      <GlowBackdrop position={[0, 1.6, -0.52]} width={2.6} height={1.1} />
+
+      {/* Patterned cloth skirt on the counter's front face, same side as the awning/sign. */}
+      <ClothSkirt position={[0, 0.28, 0.58]} width={2.6} height={0.5} />
+
+      {/* Marigold garland swagged along the counter's front lip, with brass bells at the dips. */}
+      <Garland
+        from={[-1.3, counterSize[1] + 0.08, 0.5]}
+        to={[1.3, counterSize[1] + 0.08, 0.5]}
+        count={10}
+        sag={0.14}
+        bellCount={3}
+        swags={3}
+      />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { initAudio, setGameAudioPaused, useAudioStore } from '../audio/audioManager';
 import { useGame } from '../core/GameState';
 import { HelpOverlay } from './HelpOverlay';
 import { HudBar, PhotoModeBar } from './HudBar';
@@ -7,6 +8,7 @@ import { Minimap } from './Minimap';
 import { PanelModal } from './PanelModal';
 import { PauseMenu } from './PauseMenu';
 import { usePhotoMode } from './photoMode';
+import { RadioPlayer } from './RadioPlayer';
 import { SettingsPanel } from './SettingsPanel';
 import { StartGate } from './StartGate';
 import './hud.css';
@@ -27,7 +29,12 @@ export function HUD() {
   const [minimapEnabled, setMinimapEnabled] = useState(true);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
+  const muted = useAudioStore((s) => s.muted);
+  const toggleMute = useAudioStore((s) => s.toggleMute);
+
   const handleStartClick = () => {
+    // The click itself is the user gesture browsers require before audio may play.
+    initAudio();
     useGame.getState().start();
     try {
       document.querySelector('canvas')?.requestPointerLock();
@@ -109,6 +116,11 @@ export function HUD() {
   }, [activePanel, started, helpOpen, settingsOpen, photoActive]);
 
   useEffect(() => {
+    if (!started) return;
+    setGameAudioPaused(mode === 'paused');
+  }, [mode, started]);
+
+  useEffect(() => {
     if (!toast) return;
 
     const timer = setTimeout(() => {
@@ -154,12 +166,15 @@ export function HUD() {
       <PanelModal />
       <PauseMenu />
       {!photoActive && <Minimap enabled={minimapEnabled} />}
+      {!photoActive && mode !== 'paused' && <RadioPlayer />}
 
       {!photoActive && mode !== 'paused' && (
         <HudBar
           onHelp={() => setHelpOpen(true)}
           onPhoto={() => setPhotoActive(true)}
           onSettings={() => setSettingsOpen(true)}
+          muted={muted}
+          onToggleMute={toggleMute}
         />
       )}
 

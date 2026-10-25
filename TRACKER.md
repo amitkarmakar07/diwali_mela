@@ -162,6 +162,18 @@ P3 — large visual overhaul
       under a wide conical canopy) **and the swing boat** to the reference design
       (teal A-frame legs, wooden boat).
 
+## Milestone 6 — Second playtest feedback (2026-10-25, with stall reference)
+
+- [ ] **(1) Shops need to look properly dressed, per the supplied "Sharma Ji Ki Chaat"
+      reference.** We have the striped awning, signboard, bulb row and garland, but the
+      reference is far denser: trays and baskets heaped with goods, a warm glowing
+      interior, brass bells hung along the garland, and patterned cloth panels below the
+      counter. Apply to every stall and booth.
+- [ ] **(2) Crackers in the diya zone** — rockets that climb and burst in the sky, and
+      charkhi (ground spinners) that spin with fire for 4-5 seconds.
+- [ ] **(3) Rangoli designs** — let the player choose between several patterns rather
+      than the single fixed one.
+
 ## Deferred to later milestones
 
 Ordered by the build sequence agreed after the reference study:

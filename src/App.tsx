@@ -8,6 +8,7 @@ import { InteractionManager } from './interaction/InteractionManager';
 import { World } from './world/World';
 import { HUD } from './ui/HUD';
 import { MiniGameHUD } from './ui/MiniGameHUD';
+import { MovieOverlay } from './ui/MovieOverlay';
 import { PALETTE, PLAYER } from './config/constants';
 import './App.css';
 
@@ -37,6 +38,7 @@ export default function App() {
         </Canvas>
         <HUD />
         <MiniGameHUD />
+        <MovieOverlay />
       </div>
     </KeyboardControls>
   );

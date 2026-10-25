@@ -32,6 +32,7 @@ export const ZONES = {
   funZone: [30, -5] as [number, number],
   courtyard: [28, -34] as [number, number],
   culturalStage: [26, 22] as [number, number],
+  movieZone: [-44, 36] as [number, number],
 };
 
 export const FOOD_STREET = {
@@ -134,6 +135,31 @@ export const CULTURAL_STAGE = {
   rideDuration: 26,
 };
 
+export const MOVIE_ZONE = {
+  position: [ZONES.movieZone[0], 0, ZONES.movieZone[1]] as [number, number, number],
+  padHalfWidth: 9,
+  padHalfDepth: 10,
+  /** Screen sits toward the back of the pad; the audience faces it from the front. */
+  screenZ: -9,
+  screenWidth: 8,
+  screenHeight: 4.2,
+  framePostX: 4.6,
+  frameHeight: 5.2,
+  signHeight: 6.1,
+  projectorZ: 3.2,
+  projectorHeight: 1.5,
+  benchRowZ: [-3.2, -0.2, 2.8, 5.8] as [number, number, number, number],
+  benchX: [-3.2, 3.2] as [number, number],
+  /** Eye height of a seated viewer — lower than PLAYER.eyeHeight. */
+  seatEyeHeight: 1.05,
+  /** Branch path joining the pad to the main promenade edge at x = -8.5. */
+  branchZ: 8.6,
+  branchInnerX: 9,
+  branchOuterX: 35.5,
+  branchWidth: 3.4,
+  entrySignX: 20,
+};
+
 export const CAROUSEL = {
   position: [-15, 0, -22] as [number, number, number],
   // Wide, shallow tent canopy - noticeably wider than the platform (reference: Ghode Wala Jhoola).
@@ -195,10 +221,26 @@ export const FIREWORKS = {
   gravity: -5.2,
   particleLife: 2.1,
   trailLife: 0.5,
+  sparkLife: 0.45,
   cooldown: 0.45,
   launchPad: [ZONES.courtyard[0] - 2, 0, ZONES.courtyard[1] - 9] as [number, number, number],
   /** Re-arm time for the manual finale trigger after one finishes. */
   finaleCooldown: 20,
+};
+
+/** A small cracker stand in the diya zone, clear of the diya ring (radius 11) and the
+ * entrance opening — picked at radius ~8, outside both. World-space, like launchPad. */
+export const CRACKERS = {
+  areaCenter: [ZONES.courtyard[0] - 4, 0, ZONES.courtyard[1] + 7] as [number, number, number],
+  rocketOffsetX: -1.5,
+  charkhiOffsetX: 1.5,
+  rocketCooldown: 0.6,
+  charkhiSpinSeconds: 4.5,
+  charkhiSpinSpeed: 15,
+  charkhiCooldown: 1.5,
+  charkhiSparkInterval: 0.04,
+  charkhiSparksPerTick: 2,
+  charkhiRadius: 0.55,
 };
 
 export const COURTYARD = {

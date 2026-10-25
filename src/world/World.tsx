@@ -9,6 +9,7 @@ import { SwingBoat } from '../zones/rideZone/SwingBoat';
 import { CourtyardZone } from '../zones/celebrationCourtyard/CourtyardZone';
 import { FoodStreetZone } from '../zones/foodStreet/FoodStreetZone';
 import { FunZone } from '../zones/funZone/FunZone';
+import { MovieZone } from '../zones/movieZone/MovieZone';
 import { CulturalStageZone } from '../zones/culturalStage/CulturalStageZone';
 import { NPC } from '../npc/NPC';
 import { npcWalkers, npcIdlers } from '../npc/npcPaths';
@@ -28,6 +29,7 @@ export function World() {
       <CourtyardZone />
       <FoodStreetZone />
       <FunZone />
+      <MovieZone />
       <CulturalStageZone />
 
       {npcWalkers.map((w, i) => (
@@ -39,6 +41,7 @@ export function World() {
           color={w.color}
           startT={w.startT}
           prop={w.prop}
+          dwellTimes={w.dwellTimes}
         />
       ))}
       {npcIdlers.map((n, i) => (
@@ -49,6 +52,7 @@ export function World() {
           color={n.color}
           facing={n.facing}
           prop={n.prop}
+          reactsToSky={n.reactsToSky}
         />
       ))}
     </>
