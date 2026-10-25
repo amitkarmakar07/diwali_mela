@@ -5,8 +5,7 @@ import { Group, Vector3 } from 'three';
 import { FERRIS, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { playerLook } from '../../player/playerRef';
-import { RideCameraRig } from './RideCameraRig';
+import { RideCameraRig, type RideLook } from './RideCameraRig';
 
 const TAU = Math.PI * 2;
 
@@ -15,6 +14,7 @@ export function FerrisWheel() {
   const angle = useRef(0);
   const boardedIndex = useRef(0);
   const seat = useMemo(() => new Vector3(), []);
+  const look = useMemo<RideLook>(() => ({ yaw: 0, pitch: 0 }), []);
   const [cx, , cz] = FERRIS.position;
 
   const gondolas = useMemo(
@@ -36,6 +36,13 @@ export function FerrisWheel() {
       FERRIS.hubHeight + Math.sin(a) * FERRIS.radius + FERRIS.seatDrop,
       cz + FERRIS.gondolaOffset + FERRIS.seatForward,
     );
+
+    // Hold the whole mela in frame for the entire orbit: aim at its heart and let
+    // the climb do the tilting, so the horizon rides up into the top of the frame.
+    const dx = FERRIS.lookTarget[0] - seat.x;
+    const dz = FERRIS.lookTarget[2] - seat.z;
+    look.yaw = Math.atan2(-dx, -dz);
+    look.pitch = Math.atan2(FERRIS.lookTarget[1] - seat.y, Math.hypot(dx, dz));
   });
 
   const board = () => {
@@ -50,9 +57,6 @@ export function FerrisWheel() {
       }
     });
     boardedIndex.current = best;
-    // Face back out over the mela rather than into the wheel's structure.
-    playerLook.yaw = Math.PI;
-    playerLook.pitch = -0.06;
     useGame.getState().enterRide('ferris-wheel');
   };
 
@@ -169,7 +173,12 @@ export function FerrisWheel() {
         decay={2}
       />
 
-      <RideCameraRig rideId="ferris-wheel" seat={seat} duration={FERRIS.rideDuration} />
+      <RideCameraRig
+        rideId="ferris-wheel"
+        seat={seat}
+        look={look}
+        duration={FERRIS.rideDuration}
+      />
     </group>
   );
 }

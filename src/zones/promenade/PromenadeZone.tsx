@@ -22,6 +22,7 @@ const SIGN_TARGETS = [
   { label: 'Celebration Courtyard', x: ZONES.courtyard[0], z: ZONES.courtyard[1] },
   { label: 'Food Street', x: FOOD_STREET[0], z: FOOD_STREET[1] },
   { label: 'Cultural Stage', x: CULTURAL_STAGE[0], z: CULTURAL_STAGE[1] },
+  { label: 'Fun Zone', x: ZONES.funZone[0], z: ZONES.funZone[1] },
 ];
 
 const STALL_SPECS: Array<{ x: number; z: number; color: string; rotation: number }> = [
@@ -51,10 +52,10 @@ export function PromenadeZone() {
 
   return (
     <group>
-      {LAMP_ZS.map((z) => (
+      {LAMP_ZS.map((z, i) => (
         <group key={z}>
-          <LampPost position={[-PROMENADE_X, 0, z]} height={5} />
-          <LampPost position={[PROMENADE_X, 0, z]} height={5} />
+          <LampPost position={[-PROMENADE_X, 0, z]} height={5} light={i % 2 === 0} />
+          <LampPost position={[PROMENADE_X, 0, z]} height={5} light={i % 2 === 1} />
         </group>
       ))}
 

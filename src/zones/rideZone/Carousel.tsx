@@ -5,8 +5,7 @@ import { Group, Vector3 } from 'three';
 import { CAROUSEL, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { playerLook } from '../../player/playerRef';
-import { RideCameraRig } from './RideCameraRig';
+import { RideCameraRig, type RideLook } from './RideCameraRig';
 
 const TAU = Math.PI * 2;
 const PLATFORM_HEIGHT = 0.4;
@@ -30,6 +29,7 @@ export function Carousel() {
   const angle = useRef(0);
   const boardedIndex = useRef(0);
   const seat = useMemo(() => new Vector3(), []);
+  const look = useMemo<RideLook>(() => ({ yaw: 0, pitch: 0 }), []);
   const [cx, , cz] = CAROUSEL.position;
 
   const horses = useMemo(
@@ -54,20 +54,22 @@ export function Carousel() {
           CAROUSEL.seatHeight + Math.sin(t * CAROUSEL.bobSpeed + h.phase) * CAROUSEL.bobAmplitude;
     });
 
-    // The rider turns with the platform, so carry the carousel's rotation into
-    // their facing; mouse look still applies on top of it.
-    if (useGame.getState().activeRide === 'carousel') {
-      playerLook.yaw -= CAROUSEL.rotationSpeed * delta;
-    }
-
     const boarded = horses[boardedIndex.current];
-    const a = boarded.baseAngle + angle.current;
+    // rotation.y sweeps +X toward -Z, so a horse authored at baseAngle b ends up at
+    // world angle -(b + spin) in (cos, sin) terms. Getting this sign wrong orbits
+    // the camera against the horses and parks it inside them.
+    const a = -(boarded.baseAngle + angle.current);
     const bob = Math.sin(t * CAROUSEL.bobSpeed + boarded.phase) * CAROUSEL.bobAmplitude;
     seat.set(
       cx + Math.cos(a) * CAROUSEL.horseRadius,
       PLATFORM_HEIGHT + CAROUSEL.seatHeight + CAROUSEL.riderEye + bob,
       cz + Math.sin(a) * CAROUSEL.horseRadius,
     );
+
+    // Horses are modelled facing radially outward, so look straight out along the
+    // horse's own axis; the view then sweeps with the platform on its own.
+    look.yaw = Math.atan2(-Math.cos(a), -Math.sin(a));
+    look.pitch = CAROUSEL.viewPitch;
   });
 
   const board = () => {
@@ -75,17 +77,13 @@ export function Carousel() {
     let best = 0;
     let bestScore = -Infinity;
     horses.forEach((h, i) => {
-      const score = Math.sin(h.baseAngle + angle.current);
+      const score = Math.sin(-(h.baseAngle + angle.current));
       if (score > bestScore) {
         bestScore = score;
         best = i;
       }
     });
     boardedIndex.current = best;
-    const a = horses[best].baseAngle + angle.current;
-    // Face outward along the horse's radial direction, away from the column.
-    playerLook.yaw = -a - Math.PI / 2;
-    playerLook.pitch = -0.05;
     useGame.getState().enterRide('carousel');
   };
 
@@ -176,7 +174,7 @@ export function Carousel() {
         decay={2}
       />
 
-      <RideCameraRig rideId="carousel" seat={seat} duration={CAROUSEL.rideDuration} />
+      <RideCameraRig rideId="carousel" seat={seat} look={look} duration={CAROUSEL.rideDuration} />
     </group>
   );
 }

@@ -1,12 +1,24 @@
 import { create } from 'zustand';
 
-export type PlayerMode = 'exploring' | 'riding' | 'panel' | 'paused';
+export type PlayerMode = 'exploring' | 'riding' | 'minigame' | 'panel' | 'paused';
 
 export interface ShopItem {
   name: string;
   /** Rupees — cosmetic only, nothing is tracked or spent. */
   price: number;
   note?: string;
+}
+
+/** Scoreboard a running mini-game publishes for MiniGameHUD. */
+export interface MiniGameStatus {
+  title: string;
+  hint: string;
+  score: number;
+  scoreLabel: string;
+  attemptsLeft: number;
+  attemptsLabel: string;
+  timeLeft: number | null;
+  result: string | null;
 }
 
 export type PanelContent =
@@ -19,6 +31,8 @@ interface GameState {
   nearestId: string | null;
   nearestLabel: string | null;
   activeRide: string | null;
+  activeGame: string | null;
+  gameStatus: MiniGameStatus | null;
   activePanel: PanelContent | null;
   litDiyaCount: number;
   foundGoldenDiya: boolean;
@@ -27,6 +41,9 @@ interface GameState {
   start: () => void;
   enterRide: (rideId: string) => void;
   exitRide: () => void;
+  enterGame: (gameId: string) => void;
+  exitGame: () => void;
+  setGameStatus: (status: MiniGameStatus | null) => void;
   openPanel: (panel: PanelContent) => void;
   closePanel: () => void;
   setPaused: (paused: boolean) => void;
@@ -43,6 +60,8 @@ export const useGame = create<GameState>((set, get) => ({
   nearestId: null,
   nearestLabel: null,
   activeRide: null,
+  activeGame: null,
+  gameStatus: null,
   activePanel: null,
   litDiyaCount: 0,
   foundGoldenDiya: false,
@@ -55,6 +74,13 @@ export const useGame = create<GameState>((set, get) => ({
 
   exitRide: () => set({ mode: 'exploring', activeRide: null }),
 
+  enterGame: (gameId) =>
+    set({ mode: 'minigame', activeGame: gameId, nearestId: null, nearestLabel: null }),
+
+  exitGame: () => set({ mode: 'exploring', activeGame: null, gameStatus: null }),
+
+  setGameStatus: (status) => set({ gameStatus: status }),
+
   openPanel: (panel) =>
     set({ mode: 'panel', activePanel: panel, nearestId: null, nearestLabel: null }),
 
@@ -66,7 +92,8 @@ export const useGame = create<GameState>((set, get) => ({
       set({ mode: 'paused' });
     } else {
       if (get().mode !== 'paused') return;
-      set({ mode: get().activeRide ? 'riding' : 'exploring' });
+      const { activeRide, activeGame } = get();
+      set({ mode: activeRide ? 'riding' : activeGame ? 'minigame' : 'exploring' });
     }
   },
 

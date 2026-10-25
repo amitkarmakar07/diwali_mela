@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useGame } from '../core/GameState';
 import { InteractionPrompt } from './InteractionPrompt';
+import { Minimap } from './Minimap';
 import { PanelModal } from './PanelModal';
 import { PauseMenu } from './PauseMenu';
 import './hud.css';
@@ -121,6 +122,7 @@ export function HUD() {
       <InteractionPrompt />
       <PanelModal />
       <PauseMenu />
+      <Minimap />
     </div>
   );
 }

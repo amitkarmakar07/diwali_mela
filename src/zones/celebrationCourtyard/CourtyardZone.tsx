@@ -193,12 +193,21 @@ export function CourtyardZone() {
         />
         <LampPost position={[14, 0, 0]} height={5} color={PALETTE.teal} />
 
+        {/* Diyas carry no light until they're lit, so without this the ring the player is
+            meant to walk up to and light sits in the dark and reads as unfinished. */}
         <pointLight
           position={[0, 6, 0]}
           color={PALETTE.warm}
-          intensity={35}
-          distance={30}
-          decay={2}
+          intensity={95}
+          distance={40}
+          decay={1.7}
+        />
+        <pointLight
+          position={[0, 2.2, 0]}
+          color={PALETTE.warmBright}
+          intensity={40}
+          distance={22}
+          decay={1.8}
         />
       </group>
     </>

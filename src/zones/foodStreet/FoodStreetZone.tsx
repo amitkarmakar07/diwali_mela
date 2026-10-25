@@ -488,10 +488,10 @@ export function FoodStreetZone() {
         <meshStandardMaterial color={PALETTE.path} roughness={0.9} />
       </mesh>
 
-      {LAMP_ZS.map((z) => (
+      {LAMP_ZS.map((z, i) => (
         <group key={z}>
-          <LampPost position={[-LANE_EDGE_X + 0.4, 0, z]} height={4.6} />
-          <LampPost position={[LANE_EDGE_X - 0.4, 0, z]} height={4.6} />
+          <LampPost position={[-LANE_EDGE_X + 0.4, 0, z]} height={4.6} light={i % 2 === 0} />
+          <LampPost position={[LANE_EDGE_X - 0.4, 0, z]} height={4.6} light={i % 2 === 1} />
         </group>
       ))}
       {LAMP_ZS.map((z) => (

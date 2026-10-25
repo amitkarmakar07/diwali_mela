@@ -47,7 +47,8 @@ export function PlayerController() {
     const onMove = (e: MouseEvent) => {
       if (document.pointerLockElement !== canvas) return;
       const lookMode = useGame.getState().mode;
-      if (lookMode !== 'exploring' && lookMode !== 'riding') return;
+      // Rides own the camera outright, so mouse movement is dropped while riding.
+      if (lookMode !== 'exploring' && lookMode !== 'minigame') return;
       playerLook.yaw -= e.movementX * PLAYER.mouseSensitivity;
       playerLook.pitch -= e.movementY * PLAYER.mouseSensitivity;
       playerLook.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, playerLook.pitch));
@@ -89,7 +90,8 @@ export function PlayerController() {
 
     playerPosition.set(translation.x, translation.y, translation.z);
 
-    if (mode === 'riding') return;
+    // Ride rigs and mini-game rigs own the camera while they are active.
+    if (mode === 'riding' || mode === 'minigame') return;
 
     if (mode === 'exploring') {
       const keys = getKeys();

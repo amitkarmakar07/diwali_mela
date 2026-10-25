@@ -133,6 +133,35 @@ Not yet verified (needs a human at a real browser):
 - [ ] Sustained frame rate with fireworks + NPCs on real GPU hardware
 - [ ] Window resize does not break the view or HUD
 
+## Milestone 5 — User playtest feedback (2026-10-22, with reference screenshots)
+
+First real playtest on the user's own GPU. Reference screenshots supplied for stalls, the
+horse ride, the swing boat, all three ride viewpoints, and the landing page.
+
+P0 — breaks the feel, fix first
+- [ ] **(7) Input lag / E not registering.** Pressing E to light a diya sometimes does
+      nothing, then responds later. Real frame-rate problem on actual hardware — the
+      long-deferred performance pass is now a live bug, not a hypothetical.
+- [ ] **(5) Ride viewpoints wrong + lock the mouse during rides.** Match the supplied
+      reference framing per ride. While riding, the player must NOT be able to look
+      around — the ride owns the camera completely.
+
+P1 — dark areas the user called out
+- [ ] **(1) Ride zone is too dark**, swing boat especially. Add lighting.
+- [ ] **(3) Diya area feels isolated and unlit.** Add light so it reads as part of the mela.
+
+P2 — contained
+- [ ] **(6) Landing page** should match the supplied reference layout, but **all English,
+      no Hindi**, and titled **Diwali Mela** (the reference says Dussehra Mela).
+
+P3 — large visual overhaul
+- [ ] **(2) Restyle every shop/stall/game booth** to the reference stall design: striped
+      awning, large illuminated signboard, bulb row, marigold garlands, goods on display —
+      each with a relevant Indian name (e.g. "Sharma Ji Ki Chaat", "Khilone Ki Dukaan").
+- [ ] **(4) Remodel the carousel** to the reference "Ghode Wala Jhoola" (horses on poles
+      under a wide conical canopy) **and the swing boat** to the reference design
+      (teal A-frame legs, wooden boat).
+
 ## Deferred to later milestones
 
 Ordered by the build sequence agreed after the reference study:

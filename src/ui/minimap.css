@@ -1,0 +1,108 @@
+/* Live minimap — pinned bottom-right, mirrors the hud.css warm-gold-on-night-purple language */
+
+.minimap-root {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 170px;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  z-index: 50;
+}
+
+.minimap-box {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  border-radius: 10px;
+  background: rgba(11, 10, 31, 0.78);
+  border: 1px solid rgba(255, 204, 51, 0.35);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+}
+
+.minimap-path {
+  position: absolute;
+  background: rgba(106, 79, 60, 0.75);
+}
+
+.minimap-promenade {
+  left: 46%;
+  width: 8%;
+}
+
+.minimap-food-lane {
+  width: 6%;
+  transform: translateX(-50%);
+}
+
+.minimap-food-link {
+  height: 5%;
+  background: rgba(106, 79, 60, 0.75);
+}
+
+.minimap-zone {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 5px currentColor, 0 0 0 1px rgba(11, 10, 31, 0.6);
+}
+
+.minimap-player {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+}
+
+.minimap-player::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #ffd79a;
+  box-shadow: 0 0 8px 2px rgba(255, 215, 154, 0.85);
+}
+
+.minimap-player-wedge {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid rgba(255, 215, 154, 0.9);
+  /* Pivot about the player dot's centre (5px below the 10px marker's top edge),
+     not the wedge's own base, or the arrow orbits instead of turning. */
+  transform-origin: 50% 16px;
+  margin-left: -5px;
+}
+
+.minimap-caption {
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(246, 236, 216, 0.55);
+}
+
+@media (max-width: 800px) {
+  .minimap-root {
+    bottom: 1rem;
+    right: 1rem;
+    width: 140px;
+  }
+
+  .minimap-box {
+    width: 140px;
+    height: 140px;
+  }
+}

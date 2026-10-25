@@ -5,8 +5,7 @@ import { Group, Vector3 } from 'three';
 import { PALETTE, SWING_BOAT } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { playerLook } from '../../player/playerRef';
-import { RideCameraRig } from './RideCameraRig';
+import { RideCameraRig, type RideLook } from './RideCameraRig';
 
 const TAU = Math.PI * 2;
 const TOWER_OFFSET = 2.6;
@@ -19,6 +18,7 @@ const HULL_WALL = 1.2;
 export function SwingBoat() {
   const swingGroup = useRef<Group>(null);
   const seat = useMemo(() => new Vector3(), []);
+  const look = useMemo<RideLook>(() => ({ yaw: 0, pitch: 0 }), []);
   const [cx, , cz] = SWING_BOAT.position;
 
   useFrame((state) => {
@@ -28,13 +28,19 @@ export function SwingBoat() {
     if (swingGroup.current) swingGroup.current.rotation.x = angle;
 
     const armDist = SWING_BOAT.armLength - SWING_BOAT.seatHeight;
-    seat.set(cx, SWING_BOAT.pivotHeight - armDist * Math.cos(angle), cz - armDist * Math.sin(angle));
+    seat.set(
+      cx + SWING_BOAT.seatForward,
+      SWING_BOAT.pivotHeight - armDist * Math.cos(angle),
+      cz - armDist * Math.sin(angle),
+    );
+
+    // Seated looking along the hull; tilt further skyward the nearer either apex,
+    // which is the point of this ride - deck and A-frame below, sky above.
+    look.yaw = SWING_BOAT.viewYaw;
+    look.pitch = SWING_BOAT.viewPitch + Math.abs(angle) * SWING_BOAT.skyTilt;
   });
 
   const board = () => {
-    // Face along the swing's arc (Z), not across the pivot axis (X).
-    playerLook.yaw = 0;
-    playerLook.pitch = 0.08;
     useGame.getState().enterRide('swing-boat');
   };
 
@@ -133,7 +139,12 @@ export function SwingBoat() {
         decay={2}
       />
 
-      <RideCameraRig rideId="swing-boat" seat={seat} duration={SWING_BOAT.rideDuration} />
+      <RideCameraRig
+        rideId="swing-boat"
+        seat={seat}
+        look={look}
+        duration={SWING_BOAT.rideDuration}
+      />
     </group>
   );
 }

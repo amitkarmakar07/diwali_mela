@@ -6,7 +6,7 @@ import { PALETTE } from '../config/constants';
 export type NPCProp = 'balloon' | 'bag';
 
 interface NPCProps {
-  mode: 'walk' | 'idle';
+  mode: 'walk' | 'idle' | 'seated';
   waypoints?: [number, number][];
   position?: [number, number];
   speed?: number;
@@ -47,6 +47,11 @@ export function NPC({
     [],
   );
   const shirt = color ?? PALETTE.marigold;
+  // The hip pivot sits at y=0.7, but a bench seat is at ~0.45, so a seated figure has to
+  // drop or it hovers above the bench. The leg has no knee, so the best single-segment
+  // approximation slants it forward and down far enough that the foot reaches the ground.
+  const seatedDrop = mode === 'seated' ? -0.24 : 0;
+  const legRotation: [number, number, number] = mode === 'seated' ? [0.95, 0, 0] : [0, 0, 0];
 
   // Starting mid-leg means the next target is the leg's end, not the leg's start.
   const walk = useRef({ index: startT > 0 ? 1 : 0, x: start[0], z: start[1], yaw: facing, t: 0 });
@@ -82,10 +87,10 @@ export function NPC({
       if (rightLeg.current) rightLeg.current.rotation.x = -swing;
       if (leftArm.current) leftArm.current.rotation.x = -swing * 0.6;
       if (rightArm.current) rightArm.current.rotation.x = swing * 0.6;
-      g.position.y = Math.abs(stride) * 0.045;
+      g.position.y = seatedDrop + Math.abs(stride) * 0.045;
     } else {
       const breathe = Math.sin(s.t * 1.1 + phase);
-      g.position.y = breathe * 0.022;
+      g.position.y = seatedDrop + breathe * 0.022;
       g.rotation.z = Math.sin(s.t * 0.7 + phase) * 0.018;
       if (leftArm.current) leftArm.current.rotation.x = breathe * 0.05;
       if (rightArm.current) rightArm.current.rotation.x = -breathe * 0.05;
@@ -97,7 +102,7 @@ export function NPC({
   });
 
   return (
-    <group ref={root} position={[start[0], 0, start[1]]} rotation={[0, facing, 0]}>
+    <group ref={root} position={[start[0], seatedDrop, start[1]]} rotation={[0, facing, 0]}>
       <mesh position={[0, 1.0, 0]} castShadow>
         <boxGeometry args={[0.38, 0.62, 0.24]} />
         <meshStandardMaterial color={shirt} roughness={0.8} />
@@ -143,13 +148,13 @@ export function NPC({
           </group>
         )}
       </group>
-      <group ref={leftLeg} position={[-0.11, 0.7, 0]}>
+      <group ref={leftLeg} position={[-0.11, 0.7, 0]} rotation={legRotation}>
         <mesh position={[0, -0.35, 0]}>
           <cylinderGeometry args={[0.075, 0.065, 0.7, 6]} />
           <meshStandardMaterial color="#241d33" roughness={0.9} />
         </mesh>
       </group>
-      <group ref={rightLeg} position={[0.11, 0.7, 0]}>
+      <group ref={rightLeg} position={[0.11, 0.7, 0]} rotation={legRotation}>
         <mesh position={[0, -0.35, 0]}>
           <cylinderGeometry args={[0.075, 0.065, 0.7, 6]} />
           <meshStandardMaterial color="#241d33" roughness={0.9} />

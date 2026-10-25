@@ -9,9 +9,15 @@ interface LampPostProps {
   position: [number, number, number];
   height?: number;
   color?: string;
+  /**
+   * Every lamp glows, but only some cast a real light. Three.js evaluates every active
+   * light per fragment, so a post per 9m with its own point light was costing more frame
+   * time than it was worth — the emissive bulb reads the same from a distance.
+   */
+  light?: boolean;
 }
 
-export function LampPost({ position, height = 5, color = PALETTE.warm }: LampPostProps) {
+export function LampPost({ position, height = 5, color = PALETTE.warm, light = true }: LampPostProps) {
   return (
     <group position={position}>
       <mesh position={[0, height / 2, 0]} castShadow>
@@ -22,7 +28,9 @@ export function LampPost({ position, height = 5, color = PALETTE.warm }: LampPos
         <sphereGeometry args={[0.26, 12, 12]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.2} />
       </mesh>
-      <pointLight position={[0, height, 0]} color={color} intensity={18} distance={14} decay={2} />
+      {light && (
+        <pointLight position={[0, height, 0]} color={color} intensity={32} distance={20} decay={1.9} />
+      )}
     </group>
   );
 }

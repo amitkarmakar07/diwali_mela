@@ -45,7 +45,7 @@ Run dev server: `npm run dev`. Typecheck/build: `npm run build`.
 | Ride Zone (Ferris Wheel) | `(-30, -38)` | Wheel is the tallest landmark; visible from the entrance. |
 | Celebration Courtyard | `(28, -34)` | Diya stand, diya placement spots, fireworks launch pad. |
 | *(reserved)* Food/Shop Street | `(-30, 6)` | Not built yet — keep clear. |
-| *(reserved)* Fun Zone | `(30, 4)` | Not built yet — keep clear. |
+| Fun Zone | `(30, -5)` | Three mini-game booths (ring toss, balloon shoot, cup stacking) + branch path to the promenade at `x = 8`. |
 | *(reserved)* Movie Zone | `(-28, 24)` | Not built yet — keep clear. |
 | *(reserved)* Cultural Stage | `(26, 22)` | Not built yet — keep clear. |
 
@@ -97,14 +97,14 @@ src/
 ### 5.1 Game state (`src/core/GameState.ts`)
 
 ```ts
-type PlayerMode = 'exploring' | 'riding' | 'panel' | 'paused';
+type PlayerMode = 'exploring' | 'riding' | 'minigame' | 'panel' | 'paused';
 
 useGame.getState() / useGame(selector)
 ```
 
-Fields: `mode`, `nearestId`, `nearestLabel`, `activeRide`, `activePanel`, `litDiyaCount`, `foundGoldenDiya`.
+Fields: `mode`, `nearestId`, `nearestLabel`, `activeRide`, `activeGame`, `gameStatus`, `activePanel`, `litDiyaCount`, `foundGoldenDiya`.
 
-Actions: `enterRide(rideId)`, `exitRide()`, `openPanel(panel)`, `closePanel()`, `setPaused(bool)`, `setNearest(id, label)`, `registerLitDiya()`, `findGoldenDiya()`.
+Actions: `enterRide(rideId)`, `exitRide()`, `enterGame(gameId)`, `exitGame()`, `setGameStatus(status)`, `openPanel(panel)`, `closePanel()`, `setPaused(bool)`, `setNearest(id, label)`, `registerLitDiya()`, `findGoldenDiya()`.
 
 **Rules:**
 - Player input is only honored when `mode === 'exploring'`. Every system that reads input must early-return otherwise.

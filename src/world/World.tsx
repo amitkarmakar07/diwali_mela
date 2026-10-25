@@ -8,6 +8,8 @@ import { Carousel } from '../zones/rideZone/Carousel';
 import { SwingBoat } from '../zones/rideZone/SwingBoat';
 import { CourtyardZone } from '../zones/celebrationCourtyard/CourtyardZone';
 import { FoodStreetZone } from '../zones/foodStreet/FoodStreetZone';
+import { FunZone } from '../zones/funZone/FunZone';
+import { CulturalStageZone } from '../zones/culturalStage/CulturalStageZone';
 import { NPC } from '../npc/NPC';
 import { npcWalkers, npcIdlers } from '../npc/npcPaths';
 
@@ -25,6 +27,8 @@ export function World() {
       <SwingBoat />
       <CourtyardZone />
       <FoodStreetZone />
+      <FunZone />
+      <CulturalStageZone />
 
       {npcWalkers.map((w, i) => (
         <NPC
