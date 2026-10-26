@@ -69,13 +69,56 @@ const SCREEN_LIVE_COLOR = '#aee0ff';
  * An 800x420 div at scale 0.4 lands exactly on the 8 x 4.2 screen panel.
  */
 function FilmPlayer() {
+  const frame = useRef<HTMLIFrameElement>(null);
+
   useEffect(() => {
+    // Captured at mount: this element never changes for the life of the component, and
+    // reading the ref in cleanup instead would be reading it after React may have cleared it.
+    const el = frame.current;
+
     // Pointer lock makes the in-world iframe unclickable (needed if autoplay-with-sound
     // is blocked and the viewer has to click play/unmute), so release it for the show.
     document.exitPointerLock?.();
     // The film and the mela's own ambience/radio must not play over each other.
     setGameAudioPaused(true);
-    return () => setGameAudioPaused(false);
+
+    return () => {
+      setGameAudioPaused(false);
+
+      // Clicking the film moves keyboard focus INTO the cross-origin iframe, and from
+      // then on no keydown reaches this document: E, WASD, Escape and every HUD shortcut
+      // go dead, and requestPointerLock() is refused while the frame holds focus. Nothing
+      // used to hand focus back, so the controls stayed broken long after the film ended
+      // and the whole game read as frozen. Blanking the src also stops YouTube decoding
+      // immediately rather than leaving a stream running as the element is torn down.
+      if (el) {
+        try {
+          el.src = 'about:blank';
+        } catch {
+          /* cross-origin frames can refuse a src write; focus handling below still runs */
+        }
+        el.blur();
+      }
+      const focused = document.activeElement as HTMLElement | null;
+      if (focused && focused !== document.body) focused.blur();
+      window.focus();
+
+      // drei's occlude="blending" rewrites the CANVAS's own inline style so the DOM layer
+      // can blend with it — it sets position:absolute, z-index:15 and pointer-events:none
+      // — and never restores any of it on unmount. Left behind, the canvas becomes a
+      // positioned element painting ABOVE .hud-root (a fixed-position stacking context at
+      // effective z 0), so the coin/diya readouts, the option bar, the radio and the
+      // minimap all disappear the moment the film ends. They are still there and still
+      // "visible" to script, just covered — which is why this looked like the HUD had been
+      // torn down. Clearing these three falls back to the stylesheet (static / auto / auto),
+      // exactly the state the canvas was in before the film started.
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        canvas.style.zIndex = '';
+        canvas.style.position = '';
+        canvas.style.pointerEvents = '';
+      }
+    };
   }, []);
 
   return (
@@ -88,6 +131,7 @@ function FilmPlayer() {
     >
       <div style={{ width: '800px', height: '420px' }}>
         <iframe
+          ref={frame}
           title="Outdoor Movie Zone screening"
           src={YOUTUBE_EMBED_SRC}
           allow="autoplay; encrypted-media; picture-in-picture"

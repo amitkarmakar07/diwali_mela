@@ -234,6 +234,27 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
+/* The riding prompt doubles as a clickable exit (see HUD.tsx). Its wrapper is
+   pointer-events: none, so the button has to opt back in, and it needs the usual
+   <button> resets to keep looking identical to the plain pill. */
+.hud-prompt-pill-button {
+  pointer-events: auto;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hud-prompt-pill-button:hover {
+  border-color: #ffcc33;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+.hud-prompt-pill-button:focus-visible {
+  outline: 2px solid #ffcc33;
+  outline-offset: 3px;
+}
+
 .hud-key-badge {
   background: rgba(255, 204, 51, 0.2);
   border: 1px solid #ffcc33;

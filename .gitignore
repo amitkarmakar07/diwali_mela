@@ -27,3 +27,5 @@ dist-ssr
 *.mp4
 *.mov
 *.webm
+
+.vercel

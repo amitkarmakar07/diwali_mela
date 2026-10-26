@@ -265,10 +265,22 @@ export function HUD() {
 
       {!photoActive && mode === 'riding' && (
         <div className="hud-riding-prompt">
-          <div className="hud-prompt-pill">
+          {/* A real button, not just a label. During the film pointer lock is released so the
+              YouTube frame is clickable — and once the viewer has clicked it, keyboard focus
+              sits inside that cross-origin frame and E cannot reach us at all. Clicking is
+              then the only way out, so the prompt itself has to be the escape hatch. */}
+          <button
+            type="button"
+            className="hud-prompt-pill hud-prompt-pill-button"
+            onClick={(event) => {
+              // Don't leave the button focused, or the next E/Space would re-trigger it.
+              event.currentTarget.blur();
+              useGame.getState().exitRide();
+            }}
+          >
             <div className="hud-key-badge">E</div>
             <span>Get off the ride</span>
-          </div>
+          </button>
         </div>
       )}
 

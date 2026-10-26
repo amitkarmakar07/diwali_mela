@@ -4,7 +4,7 @@ import { useKeyboardControls } from '@react-three/drei';
 import { CapsuleCollider, RigidBody, useRapier, type RapierRigidBody } from '@react-three/rapier';
 import { Euler, Vector3 } from 'three';
 import { PLAYER } from '../config/constants';
-import { useGame, isUiOverlayOpen } from '../core/GameState';
+import { useGame, isUiOverlayOpen, msSinceModeTransition } from '../core/GameState';
 import { playerLook, playerPosition } from './playerRef';
 import type { Control } from '../core/KeyboardMap';
 
@@ -59,7 +59,22 @@ export function PlayerController() {
       const { started, mode, setPaused } = useGame.getState();
       // An overlay releases the lock deliberately; only an unprompted unlock (the player
       // hitting Escape) should pause.
-      if (!locked && started && mode === 'exploring' && !isUiOverlayOpen()) setPaused(true);
+      //
+      // The transition guard covers leaving a ride, game or the film: the mode flips to
+      // 'exploring' while the lock is still released, and the re-lock below may be refused
+      // (browsers throttle re-locking, and it fails outright if focus is elsewhere — e.g.
+      // inside the film's iframe). Without the guard that transient unlocked moment read as
+      // an Escape press and dumped the player into the pause menu on every exit. Escape
+      // itself still pauses: HUD's own keydown handler owns that path.
+      if (
+        !locked &&
+        started &&
+        mode === 'exploring' &&
+        !isUiOverlayOpen() &&
+        msSinceModeTransition() > 500
+      ) {
+        setPaused(true);
+      }
     };
 
     // Browsers block re-locking for a moment after Escape, so let a click on the
