@@ -34,14 +34,14 @@
       rgba(11, 10, 31, 0) 82%,
       rgba(11, 10, 31, 0.6) 100%
     ),
-    url('/images/mela-arch.png');
+    url('/images/mela-promenade.png');
   background-repeat: no-repeat;
   background-size: cover;
-  /* Source photo is ~2.5:1 (far wider than tall); on a tall viewport "cover"
-     scales to fill height and crops the sides hard. The arch's sign sits
-     slightly right of the photo's horizontal centre, so bias the crop there
-     to keep it in frame instead of true centre. */
-  background-position: 58% 48%;
+  /* Source shot is ~2.8:1, far wider than tall, so "cover" on a tall viewport
+     fills the height and crops the sides hard. The lit stalls, crowd and wheel
+     all sit in the middle band; empty sky is above and dark ground below, so
+     bias the crop downward to hold the action rather than true centre. */
+  background-position: 50% 58%;
 }
 
 .gate-status {
@@ -238,9 +238,9 @@
 
 @media (max-width: 600px) {
   .gate-root {
-    /* Narrower crop pushes the wide photo's horizontal fill further; nudge
-       toward the arch's sign so it (not empty sky or a stall) stays centred. */
-    background-position: 62% 46%;
+    /* A narrower viewport crops this very wide shot harder still, so hold the
+       lit middle band rather than drifting into sky or bare ground. */
+    background-position: 50% 60%;
   }
 
   .gate-status,
