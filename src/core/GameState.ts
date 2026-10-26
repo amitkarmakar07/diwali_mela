@@ -37,6 +37,7 @@ interface GameState {
   started: boolean;
   nearestId: string | null;
   nearestLabel: string | null;
+  coins: number;
   activeRide: string | null;
   activeGame: string | null;
   gameStatus: MiniGameStatus | null;
@@ -61,7 +62,14 @@ interface GameState {
   showToast: (message: string) => void;
   clearToast: () => void;
   addToBag: (item: ShopItem) => void;
+  /** Awards a random amount in [min, max] and returns it, so callers can name it in a toast. */
+  awardCoins: (min: number, max: number) => number;
+  /** Returns false and spends nothing when the player can't afford it. */
+  spendCoins: (cost: number) => boolean;
 }
+
+/** Rides are paid for with coins earned elsewhere in the mela. */
+export const RIDE_COST = 10;
 
 /**
  * One keypress must cause at most one mode change. Both the ride rigs and
@@ -92,6 +100,7 @@ export const useGame = create<GameState>((set, get) => ({
   foundGoldenDiya: false,
   toast: null,
   bagItems: [],
+  coins: 0,
 
   start: () => {
     markModeTransition();
@@ -152,6 +161,19 @@ export const useGame = create<GameState>((set, get) => ({
 
   showToast: (message) => set({ toast: message }),
   clearToast: () => set({ toast: null }),
+
+  awardCoins: (min, max) => {
+    const amount = min + Math.floor(Math.random() * (max - min + 1));
+    set({ coins: get().coins + amount });
+    return amount;
+  },
+
+  spendCoins: (cost) => {
+    const { coins } = get();
+    if (coins < cost) return false;
+    set({ coins: coins - cost });
+    return true;
+  },
 
   addToBag: (item) => {
     const bagItems = get().bagItems;

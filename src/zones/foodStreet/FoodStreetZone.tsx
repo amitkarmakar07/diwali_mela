@@ -5,6 +5,7 @@ import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { Group, Mesh, MeshStandardMaterial } from 'three';
 import { FOOD_STREET, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
+import type { ShopItem } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
 import {
   LampPost,
@@ -476,10 +477,64 @@ function SeatingArea({ position: pos }: { position: [number, number, number] }) 
 
 const LAMP_ZS = [-12, -4, 4, 12];
 const BUNTING_ZS = [-8, 0, 8];
-const FILLER_SPECS: Array<[number, number, string, string]> = [
-  [-LANE_EDGE_X - 1.3, -laneHalfLength + 1.2, PALETTE.deepRed, 'Khanna Achar Stall'],
-  [LANE_EDGE_X + 1.3, -laneHalfLength + 1.2, PALETTE.teal, 'Choti Khilone Dukaan'],
-  [-LANE_EDGE_X - 1.3, laneHalfLength - 4.2, PALETTE.marigold, 'Deepawali Mithai Corner'],
+
+interface FillerSpec {
+  x: number;
+  z: number;
+  color: string;
+  name: string;
+  id: string;
+  label: string;
+  subtitle: string;
+  items: ShopItem[];
+}
+
+const FILLER_SPECS: FillerSpec[] = [
+  {
+    x: -LANE_EDGE_X - 1.3,
+    z: -laneHalfLength + 1.2,
+    color: PALETTE.deepRed,
+    name: 'Khanna Kulfi Corner',
+    id: 'shop-kulfi',
+    label: 'Browse Khanna Kulfi Corner',
+    subtitle: 'Frozen on a stick, melting fast — grab one quick!',
+    items: [
+      { name: 'Malai Kulfi', price: 40 },
+      { name: 'Pista Kulfi', price: 45, note: 'Loaded with crushed pistachio' },
+      { name: 'Mango Kulfi', price: 45 },
+      { name: 'Kulfi Falooda', price: 65, note: 'Kulfi over vermicelli and rose syrup' },
+    ],
+  },
+  {
+    x: LANE_EDGE_X + 1.3,
+    z: -laneHalfLength + 1.2,
+    color: PALETTE.teal,
+    name: 'Choti Khilone Dukaan',
+    id: 'shop-toys-filler',
+    label: 'Browse Choti Khilone Dukaan',
+    subtitle: 'Little toys, little prices — just for tonight.',
+    items: [
+      { name: 'Clay Whistle (Matka Seeti)', price: 15 },
+      { name: 'Paper Fan', price: 10 },
+      { name: 'Mini Pinwheel', price: 15 },
+      { name: 'Bubble Wand', price: 20 },
+    ],
+  },
+  {
+    x: -LANE_EDGE_X - 1.3,
+    z: laneHalfLength - 4.2,
+    color: PALETTE.marigold,
+    name: 'Deepawali Mithai Corner',
+    id: 'shop-mithai-filler',
+    label: 'Browse Deepawali Mithai Corner',
+    subtitle: 'A second mithai stop, for seconds.',
+    items: [
+      { name: 'Mysore Pak', price: 50 },
+      { name: 'Gujiya', price: 30, note: 'Stuffed with khoya and dry fruits' },
+      { name: 'Coconut Barfi', price: 40 },
+      { name: 'Milk Cake', price: 55 },
+    ],
+  },
 ];
 
 export function FoodStreetZone() {
@@ -542,15 +597,24 @@ export function FoodStreetZone() {
       <ToyShop position={[-stallOffset, 0, 4]} rotation={[0, Math.PI / 2, 0]} />
       <AccessoriesShop position={[stallOffset, 0, 10]} rotation={[0, -Math.PI / 2, 0]} />
 
-      {FILLER_SPECS.map(([x, z, color, name], i) => (
-        <DressingStall
-          key={i}
-          position={[x, 0, z]}
-          rotation={[0, i % 2 === 0 ? Math.PI / 2 : -Math.PI / 2, 0]}
-          color={color}
-          variant={i + 1}
-          name={name}
-        />
+      {FILLER_SPECS.map((f, i) => (
+        <group key={i} position={[f.x, 0, f.z]} rotation={[0, i % 2 === 0 ? Math.PI / 2 : -Math.PI / 2, 0]}>
+          <DressingStall position={[0, 0, 0]} color={f.color} variant={i + 1} name={f.name} />
+          <Interactable
+            id={f.id}
+            position={[0, 1.2, 0]}
+            radius={3}
+            label={f.label}
+            onInteract={() =>
+              useGame.getState().openPanel({
+                type: 'shop',
+                title: f.name,
+                subtitle: f.subtitle,
+                items: f.items,
+              })
+            }
+          />
+        </group>
       ))}
 
       <SeatingArea position={[LANE_EDGE_X - 1.3, 0, laneHalfLength - 2]} />

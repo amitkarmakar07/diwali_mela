@@ -4,6 +4,9 @@ import { Text } from '@react-three/drei';
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier';
 import type { Group } from 'three';
 import { ZONES, PALETTE } from '../../config/constants';
+import { useGame } from '../../core/GameState';
+import type { ShopItem } from '../../core/GameState';
+import { Interactable } from '../../interaction/Interactable';
 import { LampPost, StringLights, Banner, Bunting, DressingStall } from '../../world/Decor';
 
 const [plazaX, plazaZ] = ZONES.plaza;
@@ -21,13 +24,115 @@ const SIGN_TARGETS = [
   { label: 'Fun Zone', x: ZONES.funZone[0], z: ZONES.funZone[1] },
 ];
 
-const STALL_SPECS: Array<{ x: number; z: number; color: string; rotation: number; name: string }> = [
-  { x: -STALL_X, z: 33, color: PALETTE.marigold, rotation: -Math.PI / 2, name: 'Sharma Ji Ki Chaat' },
-  { x: STALL_X, z: 24, color: PALETTE.teal, rotation: Math.PI / 2, name: 'Mathur Achar Wale' },
-  { x: -STALL_X, z: 15, color: PALETTE.magenta, rotation: -Math.PI / 2, name: 'Khilone Ki Dukaan' },
-  { x: STALL_X, z: 6, color: PALETTE.deepRed, rotation: Math.PI / 2, name: 'Agarwal Mithai Bhandar' },
-  { x: -STALL_X, z: -3, color: PALETTE.gold, rotation: -Math.PI / 2, name: 'Verma Masala Store' },
-  { x: STALL_X, z: -11, color: PALETTE.marigold, rotation: Math.PI / 2, name: 'Ganesh Tohfa Bhandar' },
+interface StallSpec {
+  x: number;
+  z: number;
+  color: string;
+  rotation: number;
+  name: string;
+  id: string;
+  label: string;
+  subtitle: string;
+  items: ShopItem[];
+}
+
+const STALL_SPECS: StallSpec[] = [
+  {
+    x: -STALL_X,
+    z: 33,
+    color: PALETTE.marigold,
+    rotation: -Math.PI / 2,
+    name: 'Sharma Ji Ki Chaat',
+    id: 'shop-chaat',
+    label: 'Browse Sharma Ji Ki Chaat',
+    subtitle: 'Tangy, spicy, and served right now!',
+    items: [
+      { name: 'Bhel Puri', price: 30, note: 'Puffed rice, tamarind chutney' },
+      { name: 'Dahi Puri', price: 35, note: 'Topped with cool yoghurt' },
+      { name: 'Papdi Chaat', price: 35 },
+      { name: 'Aloo Tikki Chaat', price: 40, note: 'Crisp potato patties, two chutneys' },
+    ],
+  },
+  {
+    x: STALL_X,
+    z: 24,
+    color: PALETTE.teal,
+    rotation: Math.PI / 2,
+    name: 'Mathur Achar Wale',
+    id: 'shop-achar',
+    label: 'Browse Mathur Achar Wale',
+    subtitle: 'Sun-pickled, family recipe, three generations strong.',
+    items: [
+      { name: 'Mango Pickle (Aam Achar)', price: 80 },
+      { name: 'Mixed Vegetable Pickle', price: 70 },
+      { name: 'Lemon Pickle (Nimbu Achar)', price: 60 },
+      { name: 'Garlic Pickle (Lehsun Achar)', price: 75 },
+    ],
+  },
+  {
+    x: -STALL_X,
+    z: 15,
+    color: PALETTE.magenta,
+    rotation: -Math.PI / 2,
+    name: 'Khilone Ki Dukaan',
+    id: 'shop-toys-promenade',
+    label: 'Browse the Khilone Ki Dukaan',
+    subtitle: 'Hand-painted wooden toys for the little ones.',
+    items: [
+      { name: 'Spinning Top (Lattu)', price: 25 },
+      { name: 'Wooden Rattle', price: 45 },
+      { name: 'Toy Drum (Dholak)', price: 90, note: 'Hand-painted, kid-sized' },
+      { name: 'Kite (Patang)', price: 20, note: 'Comes with a reel of string' },
+    ],
+  },
+  {
+    x: STALL_X,
+    z: 6,
+    color: PALETTE.deepRed,
+    rotation: Math.PI / 2,
+    name: 'Agarwal Mithai Bhandar',
+    id: 'shop-mithai',
+    label: 'Browse Agarwal Mithai Bhandar',
+    subtitle: 'Fresh mithai, boxed for gifting or eating right here.',
+    items: [
+      { name: 'Besan Laddoo', price: 35 },
+      { name: 'Kaju Katli', price: 70, note: 'Pure cashew, silver leaf on top' },
+      { name: 'Soan Papdi', price: 40 },
+      { name: 'Rasgulla', price: 45, note: 'Soft, spongy, served chilled' },
+    ],
+  },
+  {
+    x: -STALL_X,
+    z: -3,
+    color: PALETTE.gold,
+    rotation: -Math.PI / 2,
+    name: 'Verma Masala Store',
+    id: 'shop-masala',
+    label: 'Browse Verma Masala Store',
+    subtitle: 'Fresh-ground spices, weighed while you wait.',
+    items: [
+      { name: 'Garam Masala (100g)', price: 55 },
+      { name: 'Turmeric Powder (100g)', price: 40 },
+      { name: 'Red Chilli Powder (100g)', price: 45 },
+      { name: 'Chai Masala (50g)', price: 35, note: 'Cardamom, clove, ginger blend' },
+    ],
+  },
+  {
+    x: STALL_X,
+    z: -11,
+    color: PALETTE.marigold,
+    rotation: Math.PI / 2,
+    name: 'Ganesh Jewellers',
+    id: 'shop-jewellery',
+    label: 'Browse Ganesh Jewellers',
+    subtitle: 'Festival jewellery — bring the sparkle home.',
+    items: [
+      { name: 'Gold-Plated Jhumki', price: 180 },
+      { name: 'Kundan Necklace Set', price: 350, note: 'Matching earrings included' },
+      { name: 'Maang Tikka', price: 150 },
+      { name: 'Silver Anklet Pair', price: 200 },
+    ],
+  },
 ];
 
 const BENCH_SPECS: Array<[number, number]> = [
@@ -64,14 +169,23 @@ export function PromenadeZone() {
       ))}
 
       {STALL_SPECS.map((s, i) => (
-        <DressingStall
-          key={i}
-          position={[s.x, 0, s.z]}
-          rotation={[0, s.rotation, 0]}
-          color={s.color}
-          variant={i}
-          name={s.name}
-        />
+        <group key={i} position={[s.x, 0, s.z]} rotation={[0, s.rotation, 0]}>
+          <DressingStall position={[0, 0, 0]} color={s.color} variant={i} name={s.name} />
+          <Interactable
+            id={s.id}
+            position={[0, 1.2, 0]}
+            radius={3}
+            label={s.label}
+            onInteract={() =>
+              useGame.getState().openPanel({
+                type: 'shop',
+                title: s.name,
+                subtitle: s.subtitle,
+                items: s.items,
+              })
+            }
+          />
+        </group>
       ))}
 
       <group ref={bannerGroup}>
@@ -147,9 +261,12 @@ export function PromenadeZone() {
                   <boxGeometry args={[0.55, 0.4, 1.4]} />
                   <meshStandardMaterial color={PALETTE.teal} roughness={0.7} />
                 </mesh>
+                {/* The pole sits at local z=0 and the reader stands right there looking outward
+                    (+Z, after the group's rotation) toward this panel — the far side from where
+                    drei <Text> faces by default, so it rendered mirrored like the stall signs. */}
                 <Text
                   position={[0, 0, 1.22]}
-                  rotation={[0, 0, 0]}
+                  rotation={[0, Math.PI, 0]}
                   font="/fonts/Mukta-Bold.ttf"
                   fontSize={0.24}
                   color={PALETTE.warmBright}

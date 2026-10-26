@@ -22,6 +22,7 @@ export function HUD() {
   const toast = useGame((s) => s.toast);
   const activePanel = useGame((s) => s.activePanel);
   const bagCount = useGame((s) => s.bagItems.reduce((sum, item) => sum + item.quantity, 0));
+  const coins = useGame((s) => s.coins);
 
   const photoActive = usePhotoMode((s) => s.active);
   const setPhotoActive = usePhotoMode((s) => s.setActive);
@@ -152,6 +153,7 @@ export function HUD() {
       {!photoActive && (
         <div className="hud-status">
           <div className="hud-status-item">Diyas lit: {litDiyaCount}</div>
+          <div className="hud-status-item hud-coin-item">Coins: {coins}</div>
           {foundGoldenDiya && <div className="hud-status-item hud-golden-badge">Golden Diya found!</div>}
         </div>
       )}

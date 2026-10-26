@@ -56,10 +56,11 @@ for (let r = 0; r < rows; r++) {
   }
 }
 
+// Retuned for 5 shots (was 12): every shot can hit at most one balloon, so 5 is the max.
 function prizeFor(hits: number) {
-  if (hits >= 9) return 'the top-shelf stuffed elephant';
-  if (hits >= 6) return 'a glass bangle set';
-  if (hits >= 3) return 'a packet of sparklers';
+  if (hits >= 5) return 'the top-shelf stuffed elephant';
+  if (hits >= 3) return 'a glass bangle set';
+  if (hits >= 1) return 'a packet of sparklers';
   return 'a consolation whistle';
 }
 
@@ -146,9 +147,10 @@ export function BalloonShootGame({ origin }: BalloonShootGameProps) {
 
   const finish = () => {
     const earned = prizeFor(hits.current);
+    const coinsWon = useGame.getState().awardCoins(1, 5);
     outro.current = FUN_ZONE.outroDelay;
     publish(`${hits.current} of ${BALLOONS.length} balloons popped — you win ${earned}!`);
-    useGame.getState().showToast(`Nishana Lagao: ${hits.current} popped. Prize — ${earned}!`);
+    useGame.getState().showToast(`Nishana Lagao: ${hits.current} popped. Prize — ${earned}! +${coinsWon} coins`);
   };
 
   const fire = (aimOrigin: Vector3, dir: Vector3) => {
@@ -251,7 +253,7 @@ export function BalloonShootGame({ origin }: BalloonShootGameProps) {
 
       <BoothShell
         title="Nishana Lagao"
-        subtitle="BALLOON SHOOT · 12 shots, 10 balloons"
+        subtitle="BALLOON SHOOT · 5 shots, 10 balloons"
         color={PALETTE.magenta}
         awningColor={PALETTE.teal}
       >

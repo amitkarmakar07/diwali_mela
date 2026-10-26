@@ -16,9 +16,11 @@ export function PanelModal() {
   const buy = () => {
     if (activePanel.type !== 'shop' || selected === null) return;
     const item = activePanel.items[selected];
-    useGame.getState().addToBag(item);
+    const { addToBag, awardCoins, showToast } = useGame.getState();
+    addToBag(item);
     playCartChime();
-    useGame.getState().showToast(`${item.name} added to the bag!`);
+    const coins = awardCoins(1, 2);
+    showToast(`${item.name} added to the bag! +${coins} coins`);
     closePanel();
   };
 

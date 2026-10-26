@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { Group, Vector3 } from 'three';
 import { PALETTE, SWING_BOAT } from '../../config/constants';
-import { useGame } from '../../core/GameState';
+import { useGame, RIDE_COST } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
 import { RideCameraRig, type RideLook } from './RideCameraRig';
 
@@ -44,7 +44,12 @@ export function SwingBoat() {
   });
 
   const board = () => {
-    useGame.getState().enterRide('swing-boat');
+    const { spendCoins, showToast, enterRide } = useGame.getState();
+    if (!spendCoins(RIDE_COST)) {
+      showToast(`The swing boat costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
+      return;
+    }
+    enterRide('swing-boat');
   };
 
   return (

@@ -709,9 +709,13 @@ export function DressingStall({
         <meshStandardMaterial color={PALETTE.deepRed} roughness={0.85} />
       </mesh>
       {/* This stall fronts on -Z, so the name has to sit at a *lower* z than the 0.08-deep
-          panel behind it. A +offset buried the text inside the board and every sign read blank. */}
+          panel behind it. A +offset buried the text inside the board and every sign read blank.
+          drei <Text> faces +Z by default, which is correct for a viewer on the +Z side — but the
+          customer stands on the -Z (frontZ) side looking toward +Z, so without a 180° yaw the
+          glyphs render back-to-front (mirrored) from where anyone actually reads the sign. */}
       <Text
         position={[0, POST_HEIGHT + 0.7, frontZ - 0.07]}
+        rotation={[0, Math.PI, 0]}
         font="/fonts/Mukta-Bold.ttf"
         fontSize={0.2}
         color={PALETTE.warmBright}

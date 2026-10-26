@@ -4,7 +4,7 @@ import { Text } from '@react-three/drei';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import { Group, Vector3 } from 'three';
 import { CAROUSEL, PALETTE } from '../../config/constants';
-import { useGame } from '../../core/GameState';
+import { useGame, RIDE_COST } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
 import { RideCameraRig, type RideLook } from './RideCameraRig';
 
@@ -84,7 +84,12 @@ export function Carousel() {
       }
     });
     boardedIndex.current = best;
-    useGame.getState().enterRide('carousel');
+    const { spendCoins, showToast, enterRide } = useGame.getState();
+    if (!spendCoins(RIDE_COST)) {
+      showToast(`The carousel costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
+      return;
+    }
+    enterRide('carousel');
   };
 
   return (

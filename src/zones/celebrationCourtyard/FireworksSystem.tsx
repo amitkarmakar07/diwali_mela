@@ -90,6 +90,9 @@ interface Pool {
    * deterministic rather than picked fresh (randomly) at burst time. */
   burstColor: Float32Array;
   forcedColor: Uint8Array;
+  /** Ambient rockets burst silently — see the comment on BURST_SOUND_MIN_INTERVAL's
+   * usage below for why they must not compete with the player's own cracker sounds. */
+  silent: Uint8Array;
 }
 
 // Preallocated once: a single Points draw call with fixed-size typed-array
@@ -173,6 +176,7 @@ function buildPool(): Pool {
     free,
     burstColor: new Float32Array(MAX * 3),
     forcedColor: new Uint8Array(MAX),
+    silent: new Uint8Array(MAX),
   };
 }
 
@@ -275,10 +279,18 @@ function spawnBurst(
   }
 }
 
-function launchRocket(pool: Pool, x: number, z: number, apexY: number, forcedColorHex?: string) {
+function launchRocket(
+  pool: Pool,
+  x: number,
+  z: number,
+  apexY: number,
+  forcedColorHex?: string,
+  silent = false,
+) {
   const i = allocSlot(pool);
   if (i === null) return;
   const i3 = i * 3;
+  pool.silent[i] = silent ? 1 : 0;
   pool.position[i3] = x;
   pool.position[i3 + 1] = 0.3;
   pool.position[i3 + 2] = z;
@@ -314,6 +326,11 @@ export function FireworksSystem() {
   const cooldownRef = useRef(0);
   const burstSoundCooldownRef = useRef(0);
   const showStartedRef = useRef(false);
+
+  // Ambient sky bursts: scheduled independently of the player, silent, and capped so
+  // they can never eat into the pool slots player-triggered rockets need.
+  const ambientTimerRef = useRef(2 + Math.random() * 2);
+  const ambientActiveCountRef = useRef(0);
 
   // Refs drive the per-frame finale logic (cheap, no re-renders); finaleActive is a
   // thin mirror of finaleActiveRef so the manual-trigger prompt can react to it.
@@ -361,6 +378,24 @@ export function FireworksSystem() {
   useFrame((_, delta) => {
     if (cooldownRef.current > 0) cooldownRef.current -= delta;
     if (burstSoundCooldownRef.current > 0) burstSoundCooldownRef.current -= delta;
+
+    // Paused during the finale — it already saturates the sky and the pool, so
+    // ambient bursts step aside rather than compete with it.
+    ambientTimerRef.current -= delta;
+    if (!finaleActiveRef.current && ambientTimerRef.current <= 0) {
+      ambientTimerRef.current =
+        FIREWORKS.ambientIntervalMin + Math.random() * (FIREWORKS.ambientIntervalMax - FIREWORKS.ambientIntervalMin);
+      if (ambientActiveCountRef.current < FIREWORKS.ambientMaxConcurrent && pool.free.length > FIREWORKS.ambientReserveSlots) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * FIREWORKS.ambientRadius;
+        const ax = FIREWORKS.ambientCenter[0] + Math.cos(angle) * r;
+        const az = FIREWORKS.ambientCenter[1] + Math.sin(angle) * r;
+        const apexY = FIREWORKS.ambientApexMin + Math.random() * (FIREWORKS.ambientApexMax - FIREWORKS.ambientApexMin);
+        const color = PALETTE.fireworkColors[Math.floor(Math.random() * PALETTE.fireworkColors.length)];
+        launchRocket(pool, ax, az, apexY, color, true);
+        ambientActiveCountRef.current += 1;
+      }
+    }
 
     if (finaleActiveRef.current) {
       const stage = FINALE_STAGES[finaleStageIndexRef.current];
@@ -479,10 +514,14 @@ export function FireworksSystem() {
           spawnBurst(pool, pool.position[i3], pool.position[i3 + 1], pool.position[i3 + 2], forced);
           // Every rocket bursts through this one path (manual pad, cracker stand, finale,
           // automatic show), so one throttled call here covers the bang for all of them.
-          if (burstSoundCooldownRef.current <= 0) {
+          // Ambient rockets are flagged silent so they never compete with the player's
+          // own launches for that one throttle slot (they'd otherwise risk masking the
+          // bang the player just caused, or machine-gunning the soundtrack on their own).
+          if (!pool.silent[i] && burstSoundCooldownRef.current <= 0) {
             burstSoundCooldownRef.current = BURST_SOUND_MIN_INTERVAL;
             playCrackerSound();
           }
+          if (pool.silent[i]) ambientActiveCountRef.current = Math.max(0, ambientActiveCountRef.current - 1);
           freeSlot(pool, i);
           pool.free.push(i);
         }
@@ -536,6 +575,8 @@ export function FireworksSystem() {
     playCrackerSound();
     const [px, , pz] = CRACKER_ROCKET_POS;
     launchRocket(pool, px, pz, 20 + Math.random() * 10);
+    const coins = useGame.getState().awardCoins(1, 2);
+    useGame.getState().showToast(`Cracker lit! +${coins} coins`);
   };
 
   const handleCharkhi = () => {
@@ -545,6 +586,8 @@ export function FireworksSystem() {
     charkhiSparkTimerRef.current = 0;
     playCrackerSound();
     setCharkhiPhase('spinning');
+    const coins = useGame.getState().awardCoins(1, 2);
+    useGame.getState().showToast(`Charkhi lit! +${coins} coins`);
   };
 
   const rocketLabel = rocketReady ? 'Light a Rocket' : 'Rocket Cooling Down';

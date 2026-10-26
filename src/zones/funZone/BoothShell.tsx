@@ -87,13 +87,17 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
 
       {/*
        * Booth fronts on +Z (counter/sign/skirt all sit toward +Z). The vendor stands just
-       * behind the counter at z=0.2 — behind the 0.6 back edge, but well clear of the game
-       * props every booth places starting around z=-0.4 and deeper. Shirt/turban are keyed
-       * off this booth's own colours so the three booths read as different vendors without
-       * adding new props.
+       * behind the counter at z=0.2, but offset to x=2.0 — off to one side, clear of the
+       * counter's centreline where the game targets sit. Game camera stand is at
+       * (x=0, z≈2.3) with yaw clamped to ±FUN_ZONE.yawLimit (0.55 rad); at the vendor's
+       * depth (dz = 2.3 - 0.2 = 2.1) that cone only reaches |x| <= 2.1*tan(0.55) ≈ 1.29,
+       * so x=2.0 (minus the ~0.28 turban radius, still 1.72) sits outside it for every
+       * yaw the player can aim — never between the camera and the targets. Shirt/turban
+       * are keyed off this booth's own colours so the three booths read as different
+       * vendors without adding new props.
        */}
       <Vendor
-        position={[0, 0, 0.2]}
+        position={[2.0, 0, 0.2]}
         shirt={awningColor}
         turban={color}
         phase={title.length * 0.3}

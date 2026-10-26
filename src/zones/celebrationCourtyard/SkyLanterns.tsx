@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import { SKY_LANTERNS, PALETTE } from '../../config/constants';
+import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
 
 interface Slot {
@@ -68,6 +69,9 @@ export function SkyLanterns({ releasePosition }: SkyLanternsProps) {
       );
       group.visible = true;
     }
+
+    const coins = useGame.getState().awardCoins(1, 2);
+    useGame.getState().showToast(`Sky lantern released! +${coins} coins`);
   };
 
   useFrame((_, delta) => {

@@ -70,7 +70,7 @@ export const FUN_ZONE = {
   /** Delay between the final attempt resolving and the automatic return to exploring. */
   outroDelay: 2.4,
   ringToss: {
-    rings: 6,
+    rings: 5,
     speed: 8.5,
     gravity: -9.8,
     pegTop: 1.05,
@@ -81,7 +81,7 @@ export const FUN_ZONE = {
   balloonShoot: {
     cols: 5,
     rows: 2,
-    shots: 12,
+    shots: 5,
     spacingX: 0.65,
     rowY: [1.32, 2.0] as [number, number],
     boardZ: -1.12,
@@ -92,7 +92,7 @@ export const FUN_ZONE = {
     cooldown: 0.22,
   },
   cupStack: {
-    balls: 12,
+    balls: 5,
     duration: 30,
     speed: 11,
     gravity: -9.8,
@@ -234,6 +234,18 @@ export const FIREWORKS = {
   launchPad: [ZONES.courtyard[0] - 2, 0, ZONES.courtyard[1] - 9] as [number, number, number],
   /** Re-arm time for the manual finale trigger after one finishes. */
   finaleCooldown: 20,
+  /** Ambient background bursts: irregular gaps so the sky never goes quiet, scattered
+   * over the whole mela rather than above one pad. */
+  ambientIntervalMin: 2.5,
+  ambientIntervalMax: 6,
+  ambientApexMin: 22,
+  ambientApexMax: 36,
+  /** Kept well below maxParticles so ambient bursts (which cost ~1 rocket + ~110 burst
+   * particles each) can never starve the pool that player-triggered rockets draw from. */
+  ambientReserveSlots: 300,
+  ambientMaxConcurrent: 2,
+  ambientCenter: [-7, 0] as [number, number],
+  ambientRadius: 60,
 };
 
 /** A small cracker stand in the diya zone, clear of the diya ring (radius 11) and the

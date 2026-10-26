@@ -104,9 +104,10 @@ export function RingTossGame({ origin }: RingTossGameProps) {
 
   const finish = () => {
     const earned = prizeFor(score.current);
+    const coinsWon = useGame.getState().awardCoins(1, 5);
     outro.current = FUN_ZONE.outroDelay;
     publish(`${score.current} of ${PEGS.length} pegs ringed — you win ${earned}!`);
-    useGame.getState().showToast(`Ring Toss: ${score.current} ringed. Prize — ${earned}!`);
+    useGame.getState().showToast(`Ring Toss: ${score.current} ringed. Prize — ${earned}! +${coinsWon} coins`);
   };
 
   const fire = (aimOrigin: Vector3, dir: Vector3) => {
@@ -215,7 +216,7 @@ export function RingTossGame({ origin }: RingTossGameProps) {
 
       <BoothShell
         title="Chhalla Phenko"
-        subtitle="RING TOSS · 6 rings, 5 pegs"
+        subtitle="RING TOSS · 5 rings, 5 pegs"
         color={PALETTE.teal}
         awningColor={PALETTE.deepRed}
       >

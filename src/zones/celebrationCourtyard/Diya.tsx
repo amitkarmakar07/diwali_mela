@@ -47,7 +47,14 @@ export function Diya({ id, position, golden = false, initialLit = false, light =
     if (lit) return;
     setLit(true);
     useGame.getState().registerLitDiya();
-    if (golden) useGame.getState().findGoldenDiya();
+    const coins = useGame.getState().awardCoins(1, 2);
+    if (golden) {
+      useGame.getState().findGoldenDiya();
+      // Overrides findGoldenDiya's own toast so the player still sees the coin count.
+      useGame.getState().showToast(`You found the hidden Golden Diya! Shubh Diwali! +${coins} coins`);
+    } else {
+      useGame.getState().showToast(`Diya lit! +${coins} coins`);
+    }
   };
 
   return (

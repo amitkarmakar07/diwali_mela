@@ -79,6 +79,36 @@ export function PlayerController() {
     };
   }, [gl]);
 
+  // Rides, games and overlays all release pointer lock so their UI is clickable. Handing
+  // control back only restores the mode — nothing re-locks — so the player returned to
+  // 'exploring' with dead mouse look until they happened to click. Browsers also refuse a
+  // re-lock for a moment after one is exited, hence the retries rather than a single call.
+  useEffect(() => {
+    const canvas = gl.domElement;
+    let timers: number[] = [];
+
+    const unsub = useGame.subscribe((state, prev) => {
+      if (state.mode !== 'exploring' || prev.mode === 'exploring') return;
+      if (!state.started) return;
+
+      const tryLock = () => {
+        const { started, mode } = useGame.getState();
+        if (!started || mode !== 'exploring') return;
+        if (document.pointerLockElement === canvas) return;
+        canvas.requestPointerLock?.();
+      };
+
+      tryLock();
+      timers.push(window.setTimeout(tryLock, 180), window.setTimeout(tryLock, 600));
+    });
+
+    return () => {
+      unsub();
+      timers.forEach(clearTimeout);
+      timers = [];
+    };
+  }, [gl]);
+
   useFrame((_, rawDelta) => {
     const rb = body.current;
     const ctrl = controller.current;

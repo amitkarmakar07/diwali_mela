@@ -1,14 +1,15 @@
-import { useEffect, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Html, Text, useKeyboardControls } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
-import type { Mesh, MeshStandardMaterial } from 'three';
+import { Euler, Vector3, type Mesh, type MeshStandardMaterial } from 'three';
 import { MOVIE_ZONE, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
 import { LampPost, StringLights, Bunting } from '../../world/Decor';
 import { NPC } from '../../npc/NPC';
 import { setGameAudioPaused } from '../../audio/audioManager';
+import { playerLook } from '../../player/playerRef';
 import type { Control } from '../../core/KeyboardMap';
 
 const {
@@ -25,6 +26,7 @@ const {
   projectorHeight,
   benchRowZ,
   benchX,
+  seatEyeHeight,
   branchZ,
   branchInnerX,
   branchOuterX,
@@ -39,6 +41,18 @@ const BRANCH_LENGTH = branchOuterX - branchInnerX;
 const BRANCH_CENTER_X = (branchInnerX + branchOuterX) / 2;
 const RIDE_ID = 'movie-screen';
 const YOUTUBE_EMBED_SRC = 'https://www.youtube.com/embed/z4SA0ciEoO8?autoplay=1&rel=0';
+
+/** Front-row viewing spot: just ahead of the first bench row, clear of both the benches
+ * (row at z = benchRowZ[0] = -3.2, half-depth 0.4 -> edge at -3.6, a 0.8m gap below) and the
+ * projector stand (box at z = projectorZ = 3.2, half-size 0.45, miles further back). */
+const SEAT_LOCAL_X = 0;
+const SEAT_LOCAL_Z = benchRowZ[0] - 1.2;
+/** This project's forward vector is (-sin(yaw), -cos(yaw)); with the screen straight ahead
+ * on -z (dx = screenX - seatX = 0, dz = screenZ - seatZ = -9 - (-4.4) = -4.6) the seat-to-
+ * screen yaw is atan2(-dx, -dz) = atan2(0, 4.6) = 0 — dead ahead, no turn needed. */
+const SEAT_FACING_YAW = Math.atan2(-(0 - SEAT_LOCAL_X), -(screenZ - SEAT_LOCAL_Z));
+
+const camEuler = new Euler(0, 0, 0, 'YXZ');
 
 /** Pale emissive saturates to flat white above ~1.3, so the "on" look stays well under that. */
 const SCREEN_IDLE_INTENSITY = 0.16;
@@ -310,12 +324,83 @@ function PathLighting() {
   );
 }
 
-/** Mirrors CulturalStageCameraRig's own-subscription pattern: E exits the screening even
- * though InteractionManager ignores input once mode leaves 'exploring'. No camera takeover
- * here (the player just watches from their bench), so this only needs the exit edge. */
-function ExitOnInteract() {
+/** Screen-flanking torches and a lit canopy over the seating — the zone's own light, not
+ * just the approach to it. Of the 4 lamp posts added here only 2 carry a real point light
+ * (one by the screen, one over the seats); the rest glow emissive-only like PathLighting's. */
+function ZoneLighting() {
+  const screenLampX = framePostX + 2.4;
+  const screenLampZ = screenZ + 1.3;
+  const seatLampX: [number, number] = [benchX[0] - 2.4, benchX[1] + 2.4];
+  const seatLampZ: [number, number] = [benchRowZ[0] - 1.5, benchRowZ[benchRowZ.length - 1] + 1.5];
+
+  return (
+    <>
+      {/* Screen surround: a lit post either side of the proscenium, facing the seats. */}
+      <LampPost position={[-screenLampX, 0, screenLampZ]} height={frameHeight} light />
+      <LampPost position={[screenLampX, 0, screenLampZ]} height={frameHeight} light={false} />
+
+      {/* Seating corners. */}
+      <LampPost position={[seatLampX[0], 0, seatLampZ[0]]} height={5.5} light={false} />
+      <LampPost position={[seatLampX[1], 0, seatLampZ[0]]} height={5.5} light />
+      <LampPost position={[seatLampX[0], 0, seatLampZ[1]]} height={5.5} light={false} />
+      <LampPost position={[seatLampX[1], 0, seatLampZ[1]]} height={5.5} light={false} />
+
+      {/* Canopy of string lights criss-crossing over the benches, plus a bunting line down
+          the middle, so looking up from a seat reads as lit rather than open dark sky. */}
+      <StringLights from={[seatLampX[0], 6, seatLampZ[0]]} to={[seatLampX[1], 6, seatLampZ[1]]} count={14} sag={0.5} />
+      <StringLights from={[seatLampX[0], 6, seatLampZ[1]]} to={[seatLampX[1], 6, seatLampZ[0]]} count={14} sag={0.5} />
+      <Bunting
+        from={[seatLampX[0], 6.4, (seatLampZ[0] + seatLampZ[1]) / 2]}
+        to={[seatLampX[1], 6.4, (seatLampZ[0] + seatLampZ[1]) / 2]}
+        count={11}
+        sag={0.4}
+      />
+    </>
+  );
+}
+
+/**
+ * Chrome (and others) impose a short cooldown on requestPointerLock right after any
+ * exitPointerLock on the page — the film's clickable-iframe overlay calls exitPointerLock
+ * on mount, so a bare re-lock attempt on exit can fail silently. Retry a few times with
+ * backoff; PlayerController's own canvas-click handler is still there as a final fallback.
+ */
+function reacquirePointerLock(canvas: HTMLElement) {
+  let attempt = 0;
+  const tryLock = () => {
+    if (document.pointerLockElement === canvas) return;
+    const result = canvas.requestPointerLock?.() as unknown;
+    if (result && typeof (result as Promise<void>).catch === 'function') {
+      (result as Promise<void>).catch(() => {
+        attempt += 1;
+        if (attempt < 4) setTimeout(tryLock, 150 * attempt);
+      });
+    }
+  };
+  tryLock();
+}
+
+/**
+ * Follows RideCameraRig/CulturalStageCameraRig's pattern (own E subscription, since
+ * InteractionManager ignores input once mode leaves 'exploring') but with no auto-exit
+ * duration — the film runs until the viewer presses E. On sitting down it snaps the
+ * player's look to the screen so E never starts the show mid-glance at something else;
+ * on leaving it levels the heading and fights to restore pointer-locked mouse look,
+ * which the film's overlay released to make the iframe clickable.
+ */
+function MovieCameraRig({ seat, facingYaw }: { seat: Vector3; facingYaw: number }) {
+  const camera = useThree((s) => s.camera);
+  const canvas = useThree((s) => s.gl.domElement);
   const elapsed = useRef(0);
+  const wasActive = useRef(false);
   const [sub] = useKeyboardControls<Control>();
+
+  const leave = useCallback(() => {
+    playerLook.yaw = facingYaw;
+    playerLook.pitch = 0;
+    useGame.getState().exitRide();
+    reacquirePointerLock(canvas);
+  }, [facingYaw, canvas]);
 
   useEffect(
     () =>
@@ -323,16 +408,33 @@ function ExitOnInteract() {
         (s) => s.interact,
         (pressed) => {
           if (!pressed) return;
-          const { mode, activeRide, exitRide } = useGame.getState();
-          if (mode === 'riding' && activeRide === RIDE_ID && elapsed.current > 0.6) exitRide();
+          const { mode, activeRide } = useGame.getState();
+          if (mode === 'riding' && activeRide === RIDE_ID && elapsed.current > 0.6) leave();
         },
       ),
-    [sub],
+    [sub, leave],
   );
 
   useFrame((_, delta) => {
     const { mode, activeRide } = useGame.getState();
-    elapsed.current = mode === 'riding' && activeRide === RIDE_ID ? elapsed.current + delta : 0;
+    const active = mode === 'riding' && activeRide === RIDE_ID;
+
+    if (!active) {
+      elapsed.current = 0;
+      wasActive.current = false;
+      return;
+    }
+
+    if (!wasActive.current) {
+      wasActive.current = true;
+      playerLook.yaw = facingYaw;
+      playerLook.pitch = 0.05;
+    }
+
+    elapsed.current += delta;
+    camera.position.copy(seat);
+    camEuler.set(playerLook.pitch, playerLook.yaw, 0);
+    camera.quaternion.setFromEuler(camEuler);
   });
 
   return null;
@@ -342,6 +444,11 @@ export function MovieZone() {
   const mode = useGame((s) => s.mode);
   const activeRide = useGame((s) => s.activeRide);
   const screening = mode === 'riding' && activeRide === RIDE_ID;
+
+  const seat = useMemo(
+    () => new Vector3(position[0] + SEAT_LOCAL_X, position[1] + seatEyeHeight, position[2] + SEAT_LOCAL_Z),
+    [],
+  );
 
   const startScreening = () => {
     useGame.getState().showToast('The projector flickers on — enjoy the show!');
@@ -371,7 +478,8 @@ export function MovieZone() {
 
       <MovieGate />
       <PathLighting />
-      <ExitOnInteract />
+      <ZoneLighting />
+      <MovieCameraRig seat={seat} facingYaw={SEAT_FACING_YAW} />
 
       <Interactable
         id="movie-screen-watch"

@@ -39,6 +39,10 @@ export function DiyaCarrySystem() {
     setPlaced((list) => [...list, { id, position: pos }]);
     setCarrying(false);
     useGame.getState().registerLitDiya();
+    // This Diya is mounted with initialLit, so placing it here is the actual "lighting"
+    // moment for a carried diya, not its own (never-triggered) onInteract handler.
+    const coins = useGame.getState().awardCoins(1, 2);
+    useGame.getState().showToast(`Diya placed and lit! +${coins} coins`);
   };
 
   // The "place" prompt has no fixed spot — it must follow the player wherever they

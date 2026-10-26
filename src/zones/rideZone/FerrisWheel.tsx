@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import { Group, Vector3 } from 'three';
 import { FERRIS, PALETTE } from '../../config/constants';
-import { useGame } from '../../core/GameState';
+import { useGame, RIDE_COST } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
 import { RideCameraRig, type RideLook } from './RideCameraRig';
 
@@ -57,7 +57,12 @@ export function FerrisWheel() {
       }
     });
     boardedIndex.current = best;
-    useGame.getState().enterRide('ferris-wheel');
+    const { spendCoins, showToast, enterRide } = useGame.getState();
+    if (!spendCoins(RIDE_COST)) {
+      showToast(`The Ferris wheel costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
+      return;
+    }
+    enterRide('ferris-wheel');
   };
 
   return (

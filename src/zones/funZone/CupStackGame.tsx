@@ -47,10 +47,13 @@ for (let r = 0; r < rows; r++) {
   }
 }
 
+// Retuned for 5 balls (was 12): a hit also topples cups stacked above it, so clearing
+// all CUPS.length is still possible via chain reactions, but the middle tiers are
+// lower since there are far fewer throws to work with.
 function prizeFor(down: number) {
   if (down >= CUPS.length) return 'the grand prize hamper';
-  if (down >= 7) return 'a brass diya set';
-  if (down >= 4) return 'a bag of sugar batasha';
+  if (down >= 5) return 'a brass diya set';
+  if (down >= 3) return 'a bag of sugar batasha';
   return 'a consolation balloon';
 }
 
@@ -131,12 +134,13 @@ export function CupStackGame({ origin }: CupStackGameProps) {
 
   const finish = () => {
     const earned = prizeFor(down.current);
+    const coinsWon = useGame.getState().awardCoins(1, 5);
     // The clock can run out mid-throw; drop the ball so it does not hang in the air.
     ball.current.active = false;
     syncMeshes();
     outro.current = FUN_ZONE.outroDelay;
     publish(`${down.current} of ${CUPS.length} cups down — you win ${earned}!`);
-    useGame.getState().showToast(`Pyramid Giraao: ${down.current} cups down. Prize — ${earned}!`);
+    useGame.getState().showToast(`Pyramid Giraao: ${down.current} cups down. Prize — ${earned}! +${coinsWon} coins`);
   };
 
   const topple = (index: number, fromX: number) => {
