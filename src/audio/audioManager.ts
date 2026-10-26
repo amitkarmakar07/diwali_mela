@@ -185,8 +185,10 @@ export function playCrackerSound() {
 export function playShopClip(src: string) {
   if (!initialized) return;
   if (!shopAudio) {
+    // The vendor calls out once when the player opens the stall; looping it turns a
+    // greeting into a nagging jingle for as long as the list stays open.
     shopAudio = new Audio();
-    shopAudio.loop = true;
+    shopAudio.loop = false;
   }
   shopAudio.muted = useAudioStore.getState().muted;
   shopAudio.src = src;

@@ -57,11 +57,16 @@ export function FerrisWheel() {
       }
     });
     boardedIndex.current = best;
-    const { coins, showToast, openPanel } = useGame.getState();
+    const { coins, openPanel } = useGame.getState();
     // Check affordability before prompting so a player who can't pay never sees a
-    // confirm they can't accept - they get the same refusal toast as before.
+    // confirm they can't accept. Shown as a panel, not a toast: the toast strip runs
+    // under the HUD bar and long refusals were being clipped mid-sentence.
     if (coins < RIDE_COST) {
-      showToast(`The Ferris wheel costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
+      openPanel({
+        type: 'info',
+        title: 'Not enough coins',
+        body: `The Ferris wheel costs ${RIDE_COST} coins and you have ${coins}. Light diyas, set off crackers or win a stall game to earn more.`,
+      });
       return;
     }
     openPanel({

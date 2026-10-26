@@ -84,11 +84,16 @@ export function Carousel() {
       }
     });
     boardedIndex.current = best;
-    const { coins, showToast, openPanel } = useGame.getState();
+    const { coins, openPanel } = useGame.getState();
     // Affordability gate happens before the prompt, same as the other rides, so an
-    // unaffordable ride never shows a confirm the player can't accept.
+    // unaffordable ride never shows a confirm the player can't accept. A panel rather
+    // than a toast — the toast strip sits under the HUD bar and was clipping this.
     if (coins < RIDE_COST) {
-      showToast(`The carousel costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
+      openPanel({
+        type: 'info',
+        title: 'Not enough coins',
+        body: `The carousel costs ${RIDE_COST} coins and you have ${coins}. Light diyas, set off crackers or win a stall game to earn more.`,
+      });
       return;
     }
     openPanel({

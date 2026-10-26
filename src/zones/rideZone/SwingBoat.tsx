@@ -44,9 +44,15 @@ export function SwingBoat() {
   });
 
   const board = () => {
-    const { coins, showToast, openPanel } = useGame.getState();
+    const { coins, openPanel } = useGame.getState();
+    // A panel rather than a toast: the toast strip runs under the HUD bar, which was
+    // clipping this message mid-sentence.
     if (coins < RIDE_COST) {
-      showToast(`The swing boat costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
+      openPanel({
+        type: 'info',
+        title: 'Not enough coins',
+        body: `The swing boat costs ${RIDE_COST} coins and you have ${coins}. Light diyas, set off crackers or win a stall game to earn more.`,
+      });
       return;
     }
     openPanel({
