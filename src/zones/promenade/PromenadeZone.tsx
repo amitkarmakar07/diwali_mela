@@ -1,13 +1,14 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { CuboidCollider, CylinderCollider, RigidBody } from '@react-three/rapier';
-import type { Group } from 'three';
+import { Object3D } from 'three';
+import type { Group, InstancedMesh } from 'three';
 import { ZONES, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import type { ShopItem } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { LampPost, StringLights, Banner, Bunting, DressingStall } from '../../world/Decor';
+import { LampPost, StringLights, Banner, Bunting, DressingStall, Garland } from '../../world/Decor';
 
 const [plazaX, plazaZ] = ZONES.plaza;
 const PROMENADE_X = 8.5;
@@ -148,6 +149,132 @@ const BENCH_SPECS: Array<[number, number]> = [
   [-7, -14],
 ];
 
+/** Shared placement for the four corner pillars around the plaza monument, reused by
+ * both the pillars themselves and the garland swags strung between them. */
+const PILLAR_RADIUS = 2.6;
+const PILLAR_ANGLES = [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4];
+const PILLAR_POINTS: Array<[number, number]> = PILLAR_ANGLES.map((a) => [
+  Math.sin(a) * PILLAR_RADIUS,
+  Math.cos(a) * PILLAR_RADIUS,
+]);
+
+/**
+ * Ring of small carved-look blocks standing in for a chiselled decorative band around a
+ * tier — one instancedMesh draw call no matter how many blocks ring the circumference.
+ */
+function CarvedBand({ radius, y, count = 20 }: { radius: number; y: number; count?: number }) {
+  const ref = useRef<InstancedMesh>(null);
+
+  useEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const dummy = new Object3D();
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      dummy.position.set(Math.sin(angle) * radius, y, Math.cos(angle) * radius);
+      dummy.rotation.set(0, angle, 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [radius, y, count]);
+
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, count]}>
+      <boxGeometry args={[0.22, 0.24, 0.1]} />
+      <meshStandardMaterial
+        color={PALETTE.marigold}
+        emissive={PALETTE.marigold}
+        emissiveIntensity={0.35}
+        roughness={0.55}
+        metalness={0.3}
+      />
+    </instancedMesh>
+  );
+}
+
+/**
+ * Ring of small diya lamps circling the monument — cup and flame are each one
+ * instancedMesh, so a ring of 16 lamps costs two draw calls total, not thirty-two.
+ */
+function DiyaRing({ radius, y, count = 16 }: { radius: number; y: number; count?: number }) {
+  const cupRef = useRef<InstancedMesh>(null);
+  const flameRef = useRef<InstancedMesh>(null);
+
+  useEffect(() => {
+    const cup = cupRef.current;
+    const flame = flameRef.current;
+    if (!cup || !flame) return;
+    const dummy = new Object3D();
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const x = Math.sin(angle) * radius;
+      const z = Math.cos(angle) * radius;
+      dummy.position.set(x, y, z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      cup.setMatrixAt(i, dummy.matrix);
+      dummy.position.set(x, y + 0.09, z);
+      dummy.updateMatrix();
+      flame.setMatrixAt(i, dummy.matrix);
+    }
+    cup.instanceMatrix.needsUpdate = true;
+    flame.instanceMatrix.needsUpdate = true;
+  }, [radius, y, count]);
+
+  return (
+    <group>
+      <instancedMesh ref={cupRef} args={[undefined, undefined, count]}>
+        <cylinderGeometry args={[0.09, 0.05, 0.1, 8]} />
+        <meshStandardMaterial
+          color={PALETTE.gold}
+          emissive={PALETTE.warm}
+          emissiveIntensity={0.3}
+          roughness={0.5}
+          metalness={0.3}
+        />
+      </instancedMesh>
+      {/* Pale emissive above ~1.3 saturates to flat white (fixed twice before) — held at 1.2. */}
+      <instancedMesh ref={flameRef} args={[undefined, undefined, count]}>
+        <sphereGeometry args={[0.055, 6, 6]} />
+        <meshStandardMaterial color={PALETTE.flame} emissive={PALETTE.flame} emissiveIntensity={1.2} roughness={0.3} />
+      </instancedMesh>
+    </group>
+  );
+}
+
+/** Ring of outward-tilted petals around the heart orb — one instancedMesh draw call. */
+function PetalRing({ radius, y, count = 14 }: { radius: number; y: number; count?: number }) {
+  const ref = useRef<InstancedMesh>(null);
+
+  useEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const dummy = new Object3D();
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      dummy.position.set(Math.sin(angle) * radius, y, Math.cos(angle) * radius);
+      dummy.rotation.set(Math.PI / 2.4, angle, 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [radius, y, count]);
+
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, count]}>
+      <coneGeometry args={[0.14, 0.42, 6]} />
+      <meshStandardMaterial
+        color={PALETTE.gold}
+        emissive={PALETTE.gold}
+        emissiveIntensity={0.5}
+        roughness={0.45}
+        metalness={0.3}
+      />
+    </instancedMesh>
+  );
+}
+
 export function PromenadeZone() {
   const bannerGroup = useRef<Group>(null);
 
@@ -218,6 +345,11 @@ export function PromenadeZone() {
           </mesh>
         </RigidBody>
 
+        {/* Carved band necklacing the base of the gold tier — sits between the deepRed
+            plinth and the gold drum so the monument doesn't jump straight from flat band
+            to flat band. */}
+        <CarvedBand radius={2.05} y={1.02} count={22} />
+
         <mesh position={[0, 1.15, 0]}>
           <cylinderGeometry args={[1.5, 1.9, 0.55, 20]} />
           <meshStandardMaterial
@@ -228,10 +360,28 @@ export function PromenadeZone() {
             metalness={0.3}
           />
         </mesh>
+
+        {/* Rows of small diya lamps standing on the gold drum's rim. */}
+        <DiyaRing radius={1.3} y={1.43} count={16} />
+
         <mesh position={[0, 1.55, 0]}>
           <torusGeometry args={[1.55, 0.14, 8, 32]} />
           <meshStandardMaterial color={PALETTE.marigold} emissive={PALETTE.marigold} emissiveIntensity={0.4} roughness={0.6} />
         </mesh>
+
+        {/* Second, narrower tier so the silhouette steps inward twice before the orb,
+            reading as a lamp-tower rather than a single drum with a ball on top. */}
+        <mesh position={[0, 1.78, 0]}>
+          <cylinderGeometry args={[0.9, 1.15, 0.35, 16]} />
+          <meshStandardMaterial
+            color={PALETTE.gold}
+            emissive={PALETTE.marigold}
+            emissiveIntensity={0.35}
+            roughness={0.5}
+            metalness={0.3}
+          />
+        </mesh>
+
         <mesh position={[0, 2.1, 0]}>
           <sphereGeometry args={[0.55, 16, 12]} />
           <meshStandardMaterial
@@ -241,6 +391,10 @@ export function PromenadeZone() {
             roughness={0.3}
           />
         </mesh>
+
+        {/* Lotus-petal collar flaring outward from the heart orb. */}
+        <PetalRing radius={0.75} y={2.08} count={14} />
+
         <mesh position={[0, 2.85, 0]}>
           <coneGeometry args={[0.32, 0.9, 10]} />
           <meshStandardMaterial
@@ -252,6 +406,31 @@ export function PromenadeZone() {
         </mesh>
 
         <pointLight position={[0, 2.6, 0]} color={PALETTE.warm} intensity={60} distance={22} decay={2} />
+
+        {/* Four corner pillars ringing the plinth, reusing LampPost with its point light
+            disabled (the plaza's one pointLight budget is already spent on the orb) — the
+            emissive bulb still reads from a distance. They sit inside the plinth's
+            CylinderCollider radius, so they add no new collidable footprint. */}
+        {PILLAR_POINTS.map(([x, z], i) => (
+          <LampPost key={i} position={[x, 0, z]} height={2.4} color={PALETTE.marigold} light={false} />
+        ))}
+
+        {/* Garland swags strung between adjacent pillars, draping the monument the way a
+            real shrine is dressed for the festival. */}
+        {PILLAR_POINTS.map(([x, z], i) => {
+          const [nx, nz] = PILLAR_POINTS[(i + 1) % PILLAR_POINTS.length];
+          return (
+            <Garland
+              key={i}
+              from={[x, 2.1, z]}
+              to={[nx, 2.1, nz]}
+              count={9}
+              sag={0.5}
+              bellCount={2}
+              swags={2}
+            />
+          );
+        })}
 
         <group position={[-8, 0, -5]}>
           <mesh position={[0, 1.4, 0]} castShadow>

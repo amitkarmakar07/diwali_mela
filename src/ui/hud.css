@@ -504,12 +504,19 @@
 /* Toast notification */
 .hud-toast {
   position: absolute;
-  top: 2rem;
+  /* Clears the HUD bar (top: 1.5rem) and the "Esc — Pause" hint below it. At top: 2rem a
+     long message ran under the bar's buttons and was unreadable, and with no z-index it
+     lost to the bar's 650 as well. Width is capped so it wraps instead of growing into
+     the bar's column. */
+  top: 7rem;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 700;
+  max-width: min(44rem, calc(100vw - 3rem));
+  text-align: center;
   background: rgba(26, 21, 56, 0.95);
   border: 1px solid rgba(255, 204, 51, 0.5);
-  border-radius: 50px;
+  border-radius: 18px;
   padding: 0.85rem 1.75rem;
   font-size: 1.05rem;
   font-weight: 600;

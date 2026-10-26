@@ -24,7 +24,11 @@ interface RangoliDesign {
   centerColor: string;
 }
 
-const LOTUS_COLORS = [PALETTE.marigold, PALETTE.gold, PALETTE.magenta, PALETTE.teal, PALETTE.warm, PALETTE.deepRed];
+// Powder colours that genuinely contrast with each other (red/yellow/green/blue/
+// magenta/orange), same hues already used for the fairy-light bulbs — a rangoli
+// reads as several dyes side by side, not one warm palette shaded differently.
+const POWDER_COLORS = PALETTE.bulbColors;
+
 const LOTUS: RangoliDesign = {
   id: 'lotus',
   name: 'Lotus',
@@ -37,13 +41,16 @@ const LOTUS: RangoliDesign = {
       z: Math.sin(angle) * r,
       rotY: -angle,
       scale: [0.5, 0.26, 0.14],
-      color: LOTUS_COLORS[i],
+      // One ring, six petals, six distinct dyes — every petal differs from both neighbours.
+      color: POWDER_COLORS[i % POWDER_COLORS.length],
       shape: 'petal',
     };
   }),
 };
 
-const STAR_COLORS = [PALETTE.gold, PALETTE.marigold];
+// Four contrasting dyes repeated across the eight spokes, so opposite spokes match
+// (keeping the chakra's 4-fold colour symmetry) while adjacent ones alternate sharply.
+const STAR_COLORS = [POWDER_COLORS[0], POWDER_COLORS[3], POWDER_COLORS[1], POWDER_COLORS[4]];
 const STAR: RangoliDesign = {
   id: 'star',
   name: 'Star Chakra',
@@ -62,7 +69,7 @@ const STAR: RangoliDesign = {
   }),
 };
 
-const PEACOCK_COLORS = [PALETTE.teal, PALETTE.gold, PALETTE.magenta];
+const PEACOCK_COLORS = [PALETTE.teal, PALETTE.gold, PALETTE.magenta, POWDER_COLORS[3]];
 const PEACOCK: RangoliDesign = {
   id: 'peacock',
   name: 'Peacock Fan',
@@ -82,7 +89,7 @@ const PEACOCK: RangoliDesign = {
   }),
 };
 
-const GRID_COLORS = [PALETTE.gold, PALETTE.deepRed];
+const GRID_COLORS = [PALETTE.deepRed, PALETTE.gold];
 const GRID: RangoliDesign = {
   id: 'grid',
   name: 'Geometric Grid',
@@ -91,21 +98,21 @@ const GRID: RangoliDesign = {
     const spacing = 0.62;
     const offsets = [-spacing, 0, spacing];
     const cells: RangoliCell[] = [];
-    let i = 0;
-    for (const ox of offsets) {
-      for (const oz of offsets) {
-        if (ox === 0 && oz === 0) continue; // centre stays reserved for the completion mark
+    offsets.forEach((ox, xi) => {
+      offsets.forEach((oz, zi) => {
+        if (ox === 0 && oz === 0) return; // centre stays reserved for the completion mark
+        // True 2D checkerboard parity (not just push order), so the colours alternate
+        // across both axes the way a real checkered powder grid would.
         cells.push({
           x: ox,
           z: oz,
           rotY: Math.PI / 4,
           scale: [0.24, 0.1, 0.24],
-          color: GRID_COLORS[i % GRID_COLORS.length],
+          color: GRID_COLORS[(xi + zi) % GRID_COLORS.length],
           shape: 'diamond',
         });
-        i++;
-      }
-    }
+      });
+    });
     return cells;
   })(),
 };
@@ -173,7 +180,9 @@ export function RangoliCreator({ position }: RangoliCreatorProps) {
   }, [design, step]);
 
   // Border-accent dots bracketing each petal, placed along that cell's own line from
-  // the hub so they trace its edge regardless of the design's layout.
+  // the hub so they trace its edge regardless of the design's layout. Each pair is
+  // tinted to match its own petal's dye rather than one shared accent colour, so the
+  // multi-coloured powder reads all the way out to the dots.
   useEffect(() => {
     const mesh = accentsRef.current;
     if (!mesh) return;
@@ -181,6 +190,7 @@ export function RangoliCreator({ position }: RangoliCreatorProps) {
       const built = i < step;
       const angle = Math.atan2(cell.z, cell.x);
       const baseR = Math.hypot(cell.x, cell.z);
+      dummyColor.set(cell.color);
       ACCENT_RADII.forEach((rScale, d) => {
         const idx = i * ACCENT_RADII.length + d;
         const r = baseR * rScale;
@@ -189,9 +199,11 @@ export function RangoliCreator({ position }: RangoliCreatorProps) {
         dummy.scale.setScalar(built ? ACCENT_DOT_SCALE : 0);
         dummy.updateMatrix();
         mesh.setMatrixAt(idx, dummy.matrix);
+        mesh.setColorAt(idx, dummyColor);
       });
     });
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }, [design, step]);
 
   // Outer dotted rim, revealed in proportion to build progress.
@@ -285,7 +297,10 @@ export function RangoliCreator({ position }: RangoliCreatorProps) {
           ) : (
             <sphereGeometry args={[1, 10, 8]} />
           )}
-          <meshStandardMaterial vertexColors emissive={PALETTE.warm} emissiveIntensity={0.4} roughness={0.55} />
+          {/* Emissive kept neutral white (not a warm tint) so it adds glow without
+              dyeing every petal toward orange and washing out the per-instance colours;
+              intensity stays well under the ~1.3 threshold that flattens to white. */}
+          <meshStandardMaterial vertexColors emissive="#ffffff" emissiveIntensity={0.25} roughness={0.55} />
         </instancedMesh>
 
         <instancedMesh
@@ -294,14 +309,13 @@ export function RangoliCreator({ position }: RangoliCreatorProps) {
           args={[undefined, undefined, Math.max(design.cells.length * ACCENT_RADII.length, 1)]}
         >
           <sphereGeometry args={[1, 6, 6]} />
-          <meshStandardMaterial
-            color={design.centerColor}
-            emissive={design.centerColor}
-            emissiveIntensity={0.5}
-            roughness={0.5}
-          />
+          {/* vertexColors here too, matched per-petal in the effect above; emissive
+              stays neutral white for the same reason as the bodies material. */}
+          <meshStandardMaterial vertexColors emissive="#ffffff" emissiveIntensity={0.3} roughness={0.5} />
         </instancedMesh>
 
+        {/* Outer rim stays one colour on purpose — it's the frame around the multi-
+            coloured motif, not part of it; varying it too would blur the boundary. */}
         <instancedMesh ref={borderRef} args={[undefined, undefined, BORDER_DOTS]}>
           <sphereGeometry args={[1, 6, 6]} />
           <meshStandardMaterial
