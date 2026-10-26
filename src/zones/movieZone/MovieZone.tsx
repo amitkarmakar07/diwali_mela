@@ -1,13 +1,15 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text } from '@react-three/drei';
+import { Html, Text, useKeyboardControls } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import type { Mesh, MeshStandardMaterial } from 'three';
 import { MOVIE_ZONE, PALETTE } from '../../config/constants';
 import { useGame } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
-import { StringLights, Bunting } from '../../world/Decor';
+import { LampPost, StringLights, Bunting } from '../../world/Decor';
 import { NPC } from '../../npc/NPC';
+import { setGameAudioPaused } from '../../audio/audioManager';
+import type { Control } from '../../core/KeyboardMap';
 
 const {
   position,
@@ -27,17 +29,61 @@ const {
   branchInnerX,
   branchOuterX,
   branchWidth,
-  entrySignX,
+  pathSideOffset,
+  gateHeight,
+  gatePillarSize,
+  pathLampX,
 } = MOVIE_ZONE;
 
 const BRANCH_LENGTH = branchOuterX - branchInnerX;
 const BRANCH_CENTER_X = (branchInnerX + branchOuterX) / 2;
+const RIDE_ID = 'movie-screen';
+const YOUTUBE_EMBED_SRC = 'https://www.youtube.com/embed/z4SA0ciEoO8?autoplay=1&rel=0';
 
 /** Pale emissive saturates to flat white above ~1.3, so the "on" look stays well under that. */
 const SCREEN_IDLE_INTENSITY = 0.16;
 const SCREEN_LIVE_INTENSITY = 1.15;
 const SCREEN_IDLE_COLOR = '#2a3a4a';
 const SCREEN_LIVE_COLOR = '#aee0ff';
+
+/**
+ * The YouTube iframe, transformed into the screen plane with drei's <Html transform>.
+ * Mounted only while `screening` is true (see Screen below) — an iframe is a live DOM
+ * element and a video stream running the whole session, not something to leave parked.
+ * CSS px -> world units: with distanceFactor left at its default baseline, Html divides
+ * the object's scale by 40 before sizing the div, so scale = worldSize * 40 / cssPx.
+ * An 800x420 div at scale 0.4 lands exactly on the 8 x 4.2 screen panel.
+ */
+function FilmPlayer() {
+  useEffect(() => {
+    // Pointer lock makes the in-world iframe unclickable (needed if autoplay-with-sound
+    // is blocked and the viewer has to click play/unmute), so release it for the show.
+    document.exitPointerLock?.();
+    // The film and the mela's own ambience/radio must not play over each other.
+    setGameAudioPaused(true);
+    return () => setGameAudioPaused(false);
+  }, []);
+
+  return (
+    <Html
+      transform
+      occlude="blending"
+      position={[0, screenHeight / 2 + 0.3, 0.14]}
+      scale={0.4}
+      zIndexRange={[30, 0]}
+    >
+      <div style={{ width: '800px', height: '420px' }}>
+        <iframe
+          title="Outdoor Movie Zone screening"
+          src={YOUTUBE_EMBED_SRC}
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          style={{ width: '100%', height: '100%', border: 'none' }}
+        />
+      </div>
+    </Html>
+  );
+}
 
 function Screen({ screening }: { screening: boolean }) {
   const panel = useRef<Mesh>(null);
@@ -82,6 +128,10 @@ function Screen({ screening }: { screening: boolean }) {
           roughness={0.5}
         />
       </mesh>
+
+      {/* The film itself — only mounted while actually playing, sitting a hair in front of
+          the idle panel so the DOM iframe doesn't z-fight the geometry behind it. */}
+      {screening && <FilmPlayer />}
 
       {/* Marquee sign above the beam */}
       <mesh position={[0, signHeight, 0.05]}>
@@ -187,48 +237,115 @@ function Bench({ x, z }: { x: number; z: number }) {
   );
 }
 
-function EntrySign() {
+/** Lit archway at branchOuterX, the junction where the branch leaves the promenade —
+ * the "arrival" moment, styled after the main entrance gate (pillars + beam + name board). */
+function MovieGate() {
   return (
-    <group position={[entrySignX, 0, branchZ]}>
+    <group position={[branchOuterX, 0, branchZ]}>
       <RigidBody type="fixed" colliders={false}>
-        {[-1.1, 1.1].map((x, i) => (
-          <group key={i}>
-            <CuboidCollider args={[0.1, 1.3, 0.1]} position={[x, 1.3, 0]} />
-            <mesh position={[x, 1.3, 0]} castShadow>
-              <cylinderGeometry args={[0.09, 0.11, 2.6, 8]} />
-              <meshStandardMaterial color="#2f2621" roughness={0.85} />
+        {[-pathSideOffset, pathSideOffset].map((z) => (
+          <group key={z}>
+            <CuboidCollider
+              args={[gatePillarSize / 2, gateHeight / 2, gatePillarSize / 2]}
+              position={[0, gateHeight / 2, z]}
+            />
+            <mesh position={[0, gateHeight / 2, z]} castShadow>
+              <boxGeometry args={[gatePillarSize, gateHeight, gatePillarSize]} />
+              <meshStandardMaterial color={PALETTE.deepRed} emissive={PALETTE.deepRed} emissiveIntensity={0.25} roughness={0.75} />
+            </mesh>
+            <mesh position={[0, gateHeight + 0.3, z]}>
+              <coneGeometry args={[0.55, 0.65, 4]} />
+              <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.warm} emissiveIntensity={0.35} roughness={0.6} />
             </mesh>
           </group>
         ))}
-        <mesh position={[0, 2.5, 0]} castShadow>
-          <boxGeometry args={[2.6, 0.55, 0.1]} />
-          <meshStandardMaterial color={PALETTE.deepRed} roughness={0.8} />
+        <mesh position={[0, gateHeight + 0.55, 0]}>
+          <boxGeometry args={[gatePillarSize * 1.2, 0.5, pathSideOffset * 2 + gatePillarSize]} />
+          <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.warm} emissiveIntensity={0.3} metalness={0.3} roughness={0.5} />
         </mesh>
       </RigidBody>
+
+      {/* Name board on the beam, facing +x so it reads coming off the promenade. */}
+      <mesh position={[0, gateHeight + 1.35, 0]}>
+        <boxGeometry args={[0.1, 1.0, pathSideOffset * 1.4]} />
+        <meshStandardMaterial color={PALETTE.deepRed} roughness={0.75} />
+      </mesh>
       <Text
-        position={[0, 2.5, 0.08]}
+        position={[0.07, gateHeight + 1.35, 0]}
+        rotation={[0, Math.PI / 2, 0]}
         font="/fonts/Mukta-Bold.ttf"
-        fontSize={0.26}
+        fontSize={0.42}
         color={PALETTE.warmBright}
         anchorX="center"
         anchorY="middle"
-        maxWidth={2.4}
+        maxWidth={pathSideOffset * 1.3}
       >
         Outdoor Movie Zone
       </Text>
-      <StringLights from={[-1.1, 2.2, 0.1]} to={[1.1, 2.2, 0.1]} count={6} sag={0.1} />
+
+      <StringLights from={[0, gateHeight, -pathSideOffset]} to={[0, gateHeight, pathSideOffset]} count={8} sag={0.12} />
     </group>
   );
+}
+
+/** Lamp posts, overhead string lights and bunting the length of the branch, so the whole
+ * route off the promenade reads as lit and intentional rather than a dark gap. Most lamps
+ * glow emissive-only (light=false); only one pair-end gets a real point light each. */
+function PathLighting() {
+  return (
+    <>
+      {pathLampX.map((x, i) => {
+        const first = i === 0;
+        const last = i === pathLampX.length - 1;
+        return (
+          <group key={x}>
+            <LampPost position={[x, 0, branchZ - pathSideOffset]} height={5} light={first} />
+            <LampPost position={[x, 0, branchZ + pathSideOffset]} height={5} light={last} />
+          </group>
+        );
+      })}
+      <StringLights from={[branchInnerX, 5, branchZ]} to={[branchOuterX, 5, branchZ]} count={16} sag={1.3} />
+      <Bunting from={[branchInnerX, 5.5, branchZ]} to={[branchOuterX, 5.5, branchZ]} count={13} sag={1.0} />
+    </>
+  );
+}
+
+/** Mirrors CulturalStageCameraRig's own-subscription pattern: E exits the screening even
+ * though InteractionManager ignores input once mode leaves 'exploring'. No camera takeover
+ * here (the player just watches from their bench), so this only needs the exit edge. */
+function ExitOnInteract() {
+  const elapsed = useRef(0);
+  const [sub] = useKeyboardControls<Control>();
+
+  useEffect(
+    () =>
+      sub(
+        (s) => s.interact,
+        (pressed) => {
+          if (!pressed) return;
+          const { mode, activeRide, exitRide } = useGame.getState();
+          if (mode === 'riding' && activeRide === RIDE_ID && elapsed.current > 0.6) exitRide();
+        },
+      ),
+    [sub],
+  );
+
+  useFrame((_, delta) => {
+    const { mode, activeRide } = useGame.getState();
+    elapsed.current = mode === 'riding' && activeRide === RIDE_ID ? elapsed.current + delta : 0;
+  });
+
+  return null;
 }
 
 export function MovieZone() {
   const mode = useGame((s) => s.mode);
   const activeRide = useGame((s) => s.activeRide);
-  const screening = mode === 'riding' && activeRide === 'movie-screen';
+  const screening = mode === 'riding' && activeRide === RIDE_ID;
 
   const startScreening = () => {
     useGame.getState().showToast('The projector flickers on — enjoy the show!');
-    useGame.getState().enterRide('movie-screen');
+    useGame.getState().enterRide(RIDE_ID);
   };
 
   return (
@@ -252,7 +369,9 @@ export function MovieZone() {
 
       <Bunting from={[-framePostX, frameHeight + 0.5, screenZ]} to={[framePostX, frameHeight + 0.5, screenZ]} count={9} sag={0.2} />
 
-      <EntrySign />
+      <MovieGate />
+      <PathLighting />
+      <ExitOnInteract />
 
       <Interactable
         id="movie-screen-watch"

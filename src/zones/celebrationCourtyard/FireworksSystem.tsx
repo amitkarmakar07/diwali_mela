@@ -24,6 +24,12 @@ const KIND_TRAIL = 2;
 const KIND_BURST = 3;
 const KIND_SPARK = 4;
 const TRAIL_INTERVAL = 0.045;
+/** Minimum gap between burst bangs. The finale can have several rockets apex within
+ * the same frame or two; one shot per burst with no floor would machine-gun the 4-element
+ * cracker pool into static and exceed how many overlapping plays it can voice. 0.15s caps
+ * it near 6-7 bangs/sec — audibly a dense finale, not noise, and short of pool exhaustion
+ * since each sample is well under that long. */
+const BURST_SOUND_MIN_INTERVAL = 0.15;
 const ROCKET_COLOR = PALETTE.warmBright;
 const TRAIL_COLOR = PALETTE.warm;
 
@@ -306,6 +312,7 @@ function launchRocket(pool: Pool, x: number, z: number, apexY: number, forcedCol
 export function FireworksSystem() {
   const pool = useMemo(() => buildPool(), []);
   const cooldownRef = useRef(0);
+  const burstSoundCooldownRef = useRef(0);
   const showStartedRef = useRef(false);
 
   // Refs drive the per-frame finale logic (cheap, no re-renders); finaleActive is a
@@ -353,6 +360,7 @@ export function FireworksSystem() {
 
   useFrame((_, delta) => {
     if (cooldownRef.current > 0) cooldownRef.current -= delta;
+    if (burstSoundCooldownRef.current > 0) burstSoundCooldownRef.current -= delta;
 
     if (finaleActiveRef.current) {
       const stage = FINALE_STAGES[finaleStageIndexRef.current];
@@ -469,6 +477,12 @@ export function FireworksSystem() {
             ? { r: pool.burstColor[i3], g: pool.burstColor[i3 + 1], b: pool.burstColor[i3 + 2] }
             : null;
           spawnBurst(pool, pool.position[i3], pool.position[i3 + 1], pool.position[i3 + 2], forced);
+          // Every rocket bursts through this one path (manual pad, cracker stand, finale,
+          // automatic show), so one throttled call here covers the bang for all of them.
+          if (burstSoundCooldownRef.current <= 0) {
+            burstSoundCooldownRef.current = BURST_SOUND_MIN_INTERVAL;
+            playCrackerSound();
+          }
           freeSlot(pool, i);
           pool.free.push(i);
         }

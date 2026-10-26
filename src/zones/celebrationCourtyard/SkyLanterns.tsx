@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 import { SKY_LANTERNS, PALETTE } from '../../config/constants';
@@ -10,6 +10,15 @@ interface Slot {
   driftPhase: number;
   driftSpeed: number;
 }
+
+/** Local offsets (relative to the stand's own position) for the static unlit lanterns
+ * resting on its tabletop. */
+const STAND_LANTERN_OFFSETS: Array<[number, number]> = [
+  [-0.35, -0.15],
+  [-0.1, 0.18],
+  [0.15, -0.12],
+  [0.35, 0.15],
+];
 
 interface SkyLanternsProps {
   releasePosition: [number, number, number];
@@ -31,6 +40,12 @@ export function SkyLanterns({ releasePosition }: SkyLanternsProps) {
     })),
   );
   const cooldownRef = useRef(0);
+
+  // Mirrors ready/full/cooling into the prompt label so running out of aloft slots (or
+  // being mid-cooldown) reads as a reason rather than a silent no-op — the project has
+  // shipped that wart before.
+  const releaseStateRef = useRef<'ready' | 'full' | 'cooling'>('ready');
+  const [releaseState, setReleaseState] = useState<'ready' | 'full' | 'cooling'>('ready');
 
   const handleRelease = () => {
     if (cooldownRef.current > 0) return;
@@ -57,6 +72,14 @@ export function SkyLanterns({ releasePosition }: SkyLanternsProps) {
 
   useFrame((_, delta) => {
     if (cooldownRef.current > 0) cooldownRef.current -= delta;
+
+    const full = slots.current.every((s) => s.alive);
+    const nextState: typeof releaseStateRef.current =
+      cooldownRef.current > 0 ? 'cooling' : full ? 'full' : 'ready';
+    if (nextState !== releaseStateRef.current) {
+      releaseStateRef.current = nextState;
+      setReleaseState(nextState);
+    }
 
     for (let i = 0; i < slots.current.length; i++) {
       const slot = slots.current[i];
@@ -87,15 +110,55 @@ export function SkyLanterns({ releasePosition }: SkyLanternsProps) {
     [],
   );
 
+  const releaseLabel =
+    releaseState === 'full'
+      ? 'All Lanterns Aloft'
+      : releaseState === 'cooling'
+        ? 'Releasing...'
+        : 'Release a Sky Lantern';
+
   return (
     <>
       <Interactable
         id="sky-lantern-release"
         position={releasePosition}
         radius={2.5}
-        label="Release a Sky Lantern"
+        label={releaseLabel}
         onInteract={handleRelease}
-      />
+      >
+        {/* The stand itself — decorative only, no collider, so it never pushes the
+            player out of INTERACT_RADIUS. */}
+        <mesh position={[0, 0.2, 0]} castShadow>
+          <cylinderGeometry args={[0.12, 0.16, 0.4, 8]} />
+          <meshStandardMaterial color="#4a3a33" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.42, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.1, 0.08, 0.7]} />
+          <meshStandardMaterial color="#6e3a22" roughness={0.8} />
+        </mesh>
+        {STAND_LANTERN_OFFSETS.map(([ox, oz], i) => (
+          <group key={i} position={[ox, 0.64, oz]}>
+            <mesh>
+              <cylinderGeometry args={[0.14, 0.17, 0.28, 8]} />
+              <meshStandardMaterial
+                color={PALETTE.marigold}
+                emissive={PALETTE.warm}
+                emissiveIntensity={0.25}
+                roughness={0.65}
+              />
+            </mesh>
+            <mesh position={[0, 0.16, 0]}>
+              <coneGeometry args={[0.08, 0.1, 8]} />
+              <meshStandardMaterial
+                color={PALETTE.gold}
+                emissive={PALETTE.gold}
+                emissiveIntensity={0.3}
+                roughness={0.6}
+              />
+            </mesh>
+          </group>
+        ))}
+      </Interactable>
       {slotIndices.map((i) => (
         <group
           key={i}

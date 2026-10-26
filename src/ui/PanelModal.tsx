@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { playCartChime } from '../audio/audioManager';
 import { useGame } from '../core/GameState';
 
 export function PanelModal() {
@@ -15,7 +16,9 @@ export function PanelModal() {
   const buy = () => {
     if (activePanel.type !== 'shop' || selected === null) return;
     const item = activePanel.items[selected];
-    useGame.getState().showToast(`The vendor hands you ${item.name}. Shubh Diwali!`);
+    useGame.getState().addToBag(item);
+    playCartChime();
+    useGame.getState().showToast(`${item.name} added to the bag!`);
     closePanel();
   };
 

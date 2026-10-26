@@ -2,14 +2,30 @@ interface HudBarProps {
   onHelp: () => void;
   onPhoto: () => void;
   onSettings: () => void;
+  onBag: () => void;
+  bagCount: number;
   muted: boolean;
   onToggleMute: () => void;
 }
 
 /** Persistent top-right control row — the HUD's other half to the bottom-right minimap. */
-export function HudBar({ onHelp, onPhoto, onSettings, muted, onToggleMute }: HudBarProps) {
+export function HudBar({ onHelp, onPhoto, onSettings, onBag, bagCount, muted, onToggleMute }: HudBarProps) {
   return (
     <div className="hud-bar">
+      <button
+        type="button"
+        className="hud-bar-btn"
+        onClick={onBag}
+        aria-label={`Bag, ${bagCount} item${bagCount === 1 ? '' : 's'}`}
+        title="Bag"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M6 8h12l-1 12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1L6 8z" strokeLinejoin="round" />
+          <path d="M9 8V6a3 3 0 0 1 6 0v2" strokeLinecap="round" />
+        </svg>
+        <span className="hud-bar-label">Bag{bagCount > 0 ? ` (${bagCount})` : ''}</span>
+      </button>
+
       <button
         type="button"
         className="hud-bar-btn"

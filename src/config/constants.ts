@@ -152,12 +152,20 @@ export const MOVIE_ZONE = {
   benchX: [-3.2, 3.2] as [number, number],
   /** Eye height of a seated viewer — lower than PLAYER.eyeHeight. */
   seatEyeHeight: 1.05,
-  /** Branch path joining the pad to the main promenade edge at x = -8.5. */
+  /** Branch path joining the pad to the main promenade edge at x = -8.5. Widened and lit
+   * end to end so the zone reads as connected rather than a dark detour off the promenade. */
   branchZ: 8.6,
   branchInnerX: 9,
   branchOuterX: 35.5,
-  branchWidth: 3.4,
-  entrySignX: 20,
+  branchWidth: 6,
+  /** Lateral offset (from the branch centerline) for the gate pillars and path lamp posts —
+   * just outside the path edge (branchWidth / 2) with a little clearance. */
+  pathSideOffset: 3.4,
+  /** Lit archway at branchOuterX, where the branch leaves the promenade. */
+  gateHeight: 6.4,
+  gatePillarSize: 0.85,
+  /** Local x stops for lamp-post pairs along the branch, between the gate and the pad edge. */
+  pathLampX: [16, 23, 30] as [number, number, number],
 };
 
 export const CAROUSEL = {

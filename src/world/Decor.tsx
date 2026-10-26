@@ -5,6 +5,56 @@ import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { Color, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D } from 'three';
 import { PALETTE } from '../config/constants';
 
+const VENDOR_SKIN = '#c89a68';
+
+interface VendorProps {
+  position: [number, number, number];
+  shirt?: string;
+  phase?: number;
+  /** Turban colour — a cheap way to make neighbouring vendors look distinct. */
+  turban?: string;
+}
+
+/**
+ * Shared procedural vendor figure — torso cylinder, head sphere, turban torus, two angled
+ * arms, swaying gently in useFrame. Shared so every staffed counter (food-street shops,
+ * dressing stalls, booths) uses the same ~5-mesh figure instead of duplicating it.
+ */
+export function Vendor({ position, shirt = PALETTE.deepRed, phase = 0, turban = PALETTE.marigold }: VendorProps) {
+  const group = useRef<Group>(null);
+
+  useFrame((state) => {
+    if (!group.current) return;
+    group.current.rotation.z = Math.sin(state.clock.elapsedTime * 1.2 + phase) * 0.025;
+    group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5 + phase) * 0.08;
+  });
+
+  return (
+    <group position={position} ref={group}>
+      <mesh position={[0, 0.75, 0]} castShadow>
+        <cylinderGeometry args={[0.22, 0.28, 0.9, 10]} />
+        <meshStandardMaterial color={shirt} roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 1.35, 0]} castShadow>
+        <sphereGeometry args={[0.18, 12, 10]} />
+        <meshStandardMaterial color={VENDOR_SKIN} roughness={0.7} />
+      </mesh>
+      <mesh position={[0, 1.52, 0]}>
+        <torusGeometry args={[0.2, 0.08, 6, 12]} />
+        <meshStandardMaterial color={turban} roughness={0.8} />
+      </mesh>
+      <mesh position={[-0.26, 0.95, 0]} rotation={[0, 0, 0.3]} castShadow>
+        <cylinderGeometry args={[0.07, 0.08, 0.55, 8]} />
+        <meshStandardMaterial color={shirt} roughness={0.85} />
+      </mesh>
+      <mesh position={[0.26, 0.95, 0]} rotation={[0, 0, -0.3]} castShadow>
+        <cylinderGeometry args={[0.07, 0.08, 0.55, 8]} />
+        <meshStandardMaterial color={shirt} roughness={0.85} />
+      </mesh>
+    </group>
+  );
+}
+
 interface LampPostProps {
   position: [number, number, number];
   height?: number;
@@ -502,6 +552,9 @@ const COUNTER_SIZE: [number, number, number] = [2.6, 1.0, 1.3];
 const POST_HEIGHT = 2.3;
 const COUNTER_TOP = COUNTER_SIZE[1];
 
+const VENDOR_SHIRTS = [PALETTE.deepRed, PALETTE.teal, PALETTE.magenta];
+const VENDOR_TURBANS = [PALETTE.marigold, PALETTE.gold, PALETTE.teal];
+
 /** Shallow basket/tray — the bowl a heap sits in, so the pile reads as served, not floating. */
 function Tray({ x, z, radius, color }: { x: number; z: number; radius: number; color: string }) {
   return (
@@ -655,8 +708,10 @@ export function DressingStall({
         <boxGeometry args={[signWidth, 0.5, 0.08]} />
         <meshStandardMaterial color={PALETTE.deepRed} roughness={0.85} />
       </mesh>
+      {/* This stall fronts on -Z, so the name has to sit at a *lower* z than the 0.08-deep
+          panel behind it. A +offset buried the text inside the board and every sign read blank. */}
       <Text
-        position={[0, POST_HEIGHT + 0.7, frontZ + 0.05]}
+        position={[0, POST_HEIGHT + 0.7, frontZ - 0.07]}
         font="/fonts/Mukta-Bold.ttf"
         fontSize={0.2}
         color={PALETTE.warmBright}
@@ -667,9 +722,11 @@ export function DressingStall({
         {name}
       </Text>
 
-      {/* Glowing striped backdrop behind the goods, on the far side from the counter front. */}
+      {/* Glowing striped backdrop, set back far enough that the vendor stands in front of
+          it and reads as a silhouette against the light. At the counter's back edge it sat
+          between the customer and the vendor and hid them entirely. */}
       <GlowBackdrop
-        position={[0, counterY + 0.7, COUNTER_SIZE[2] / 2 - 0.03]}
+        position={[0, counterY + 0.7, COUNTER_SIZE[2] / 2 + 0.85]}
         width={COUNTER_SIZE[0] - 0.2}
         height={1.2}
       />
@@ -688,6 +745,14 @@ export function DressingStall({
       />
 
       <CounterGoods variant={variant} />
+
+      {/* Vendor stands on the far side from frontZ (the awning/sign side), facing the counter. */}
+      <Vendor
+        position={[0, 0, COUNTER_SIZE[2] / 2 + 0.4]}
+        shirt={VENDOR_SHIRTS[variant % VENDOR_SHIRTS.length]}
+        turban={VENDOR_TURBANS[(variant + 1) % VENDOR_TURBANS.length]}
+        phase={(position[0] + position[2]) * 0.3}
+      />
     </group>
   );
 }

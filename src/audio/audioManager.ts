@@ -33,6 +33,9 @@ let crackerPoolIndex = 0;
 let initialized = false;
 let resumeAfterPause = { bg: false, radio: false };
 
+/** Synthesised cart chime — there's no bundled sound file for a purchase, so it's a two-note Web Audio tone. */
+let chimeCtx: AudioContext | null = null;
+
 /** Autoplay can be silently rejected by the browser; swallow so it never becomes an unhandled rejection. */
 function safePlay(el: HTMLAudioElement) {
   el.play().catch(() => {
@@ -118,6 +121,46 @@ export function initAudio() {
     el.muted = muted;
     return el;
   });
+
+  // Created here, in the same user-gesture handler as everything else above, so it
+  // doesn't start (or stay) suspended when playCartChime is first called later.
+  chimeCtx = new AudioContext();
+}
+
+/**
+ * Short two-note "cart ding" for a bag purchase, synthesised with an oscillator and a
+ * gain envelope — there's no bundled sound asset for this. Silent while muted.
+ */
+export function playCartChime() {
+  if (!chimeCtx || useAudioStore.getState().muted) return;
+  if (chimeCtx.state === 'suspended') {
+    chimeCtx.resume().catch(() => {
+      /* resume can reject if the gesture doesn't count; the ding just stays silent */
+    });
+  }
+
+  const notes = [
+    { freq: 1046.5, start: 0, duration: 0.12 }, // C6
+    { freq: 1568.0, start: 0.09, duration: 0.18 }, // G6
+  ];
+
+  for (const note of notes) {
+    const osc = chimeCtx.createOscillator();
+    const gain = chimeCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = note.freq;
+
+    const startAt = chimeCtx.currentTime + note.start;
+    const endAt = startAt + note.duration;
+    gain.gain.setValueAtTime(0, startAt);
+    gain.gain.linearRampToValueAtTime(0.35, startAt + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+    osc.connect(gain);
+    gain.connect(chimeCtx.destination);
+    osc.start(startAt);
+    osc.stop(endAt + 0.02);
+  }
 }
 
 /**

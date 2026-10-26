@@ -9,6 +9,13 @@ export interface ShopItem {
   note?: string;
 }
 
+/** A line in the player's bag — repeat purchases of the same item bump quantity rather than duplicating. */
+export interface BagItem {
+  name: string;
+  price: number;
+  quantity: number;
+}
+
 /** Scoreboard a running mini-game publishes for MiniGameHUD. */
 export interface MiniGameStatus {
   title: string;
@@ -37,6 +44,7 @@ interface GameState {
   litDiyaCount: number;
   foundGoldenDiya: boolean;
   toast: string | null;
+  bagItems: BagItem[];
 
   start: () => void;
   enterRide: (rideId: string) => void;
@@ -52,6 +60,7 @@ interface GameState {
   findGoldenDiya: () => void;
   showToast: (message: string) => void;
   clearToast: () => void;
+  addToBag: (item: ShopItem) => void;
 }
 
 /**
@@ -82,6 +91,7 @@ export const useGame = create<GameState>((set, get) => ({
   litDiyaCount: 0,
   foundGoldenDiya: false,
   toast: null,
+  bagItems: [],
 
   start: () => {
     markModeTransition();
@@ -142,4 +152,16 @@ export const useGame = create<GameState>((set, get) => ({
 
   showToast: (message) => set({ toast: message }),
   clearToast: () => set({ toast: null }),
+
+  addToBag: (item) => {
+    const bagItems = get().bagItems;
+    const existing = bagItems.findIndex((b) => b.name === item.name);
+    if (existing === -1) {
+      set({ bagItems: [...bagItems, { name: item.name, price: item.price, quantity: 1 }] });
+    } else {
+      const next = [...bagItems];
+      next[existing] = { ...next[existing], quantity: next[existing].quantity + 1 };
+      set({ bagItems: next });
+    }
+  },
 }));

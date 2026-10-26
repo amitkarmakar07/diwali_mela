@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { initAudio, setGameAudioPaused, useAudioStore } from '../audio/audioManager';
 import { useGame } from '../core/GameState';
+import { BagPanel } from './BagPanel';
 import { HelpOverlay } from './HelpOverlay';
 import { HudBar, PhotoModeBar } from './HudBar';
 import { InteractionPrompt } from './InteractionPrompt';
@@ -20,12 +21,14 @@ export function HUD() {
   const foundGoldenDiya = useGame((s) => s.foundGoldenDiya);
   const toast = useGame((s) => s.toast);
   const activePanel = useGame((s) => s.activePanel);
+  const bagCount = useGame((s) => s.bagItems.reduce((sum, item) => sum + item.quantity, 0));
 
   const photoActive = usePhotoMode((s) => s.active);
   const setPhotoActive = usePhotoMode((s) => s.setActive);
 
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [bagOpen, setBagOpen] = useState(false);
   const [minimapEnabled, setMinimapEnabled] = useState(true);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -76,6 +79,10 @@ export function HUD() {
         setSettingsOpen(false);
         return;
       }
+      if (bagOpen) {
+        setBagOpen(false);
+        return;
+      }
 
       const state = useGame.getState();
       if (state.activePanel) {
@@ -94,14 +101,14 @@ export function HUD() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [photoActive, helpOpen, settingsOpen, setPhotoActive]);
+  }, [photoActive, helpOpen, settingsOpen, bagOpen, setPhotoActive]);
 
-  // Any overlay that needs a usable cursor (a game panel, Help, Settings, or photo mode's
-  // exit/save buttons) must release pointer lock while open and let the player re-acquire
-  // it on close — otherwise the overlay is there but unclickable.
+  // Any overlay that needs a usable cursor (a game panel, Help, Settings, Bag, or photo
+  // mode's exit/save buttons) must release pointer lock while open and let the player
+  // re-acquire it on close — otherwise the overlay is there but unclickable.
   useEffect(() => {
     if (!started) return;
-    const overlayOpen = Boolean(activePanel) || helpOpen || settingsOpen || photoActive;
+    const overlayOpen = Boolean(activePanel) || helpOpen || settingsOpen || bagOpen || photoActive;
     if (overlayOpen) {
       document.exitPointerLock();
       return;
@@ -113,7 +120,7 @@ export function HUD() {
         /* browser may reject, or re-lock is throttled right after an exit */
       }
     }
-  }, [activePanel, started, helpOpen, settingsOpen, photoActive]);
+  }, [activePanel, started, helpOpen, settingsOpen, bagOpen, photoActive]);
 
   useEffect(() => {
     if (!started) return;
@@ -173,6 +180,8 @@ export function HUD() {
           onHelp={() => setHelpOpen(true)}
           onPhoto={() => setPhotoActive(true)}
           onSettings={() => setSettingsOpen(true)}
+          onBag={() => setBagOpen(true)}
+          bagCount={bagCount}
           muted={muted}
           onToggleMute={toggleMute}
         />
@@ -183,6 +192,8 @@ export function HUD() {
       )}
 
       {helpOpen && !photoActive && <HelpOverlay onClose={() => setHelpOpen(false)} />}
+
+      {bagOpen && !photoActive && <BagPanel onClose={() => setBagOpen(false)} />}
 
       {settingsOpen && !photoActive && (
         <SettingsPanel

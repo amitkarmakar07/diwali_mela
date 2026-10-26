@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Text } from '@react-three/drei';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { PALETTE } from '../../config/constants';
-import { StringLights, CandyAwning, Garland, ClothSkirt, GlowBackdrop } from '../../world/Decor';
+import { StringLights, CandyAwning, Garland, ClothSkirt, GlowBackdrop, Vendor } from '../../world/Decor';
 
 const METAL = '#3a3240';
 const WOOD_DARK = '#2f2621';
@@ -84,6 +84,20 @@ export function BoothShell({ title, subtitle, color, awningColor, children }: Bo
 
       {/* Glowing striped backdrop behind the goods — visual only, the collider above handles the wall. */}
       <GlowBackdrop position={[0, 1.45, -1.75]} width={5.2} height={2.9} />
+
+      {/*
+       * Booth fronts on +Z (counter/sign/skirt all sit toward +Z). The vendor stands just
+       * behind the counter at z=0.2 — behind the 0.6 back edge, but well clear of the game
+       * props every booth places starting around z=-0.4 and deeper. Shirt/turban are keyed
+       * off this booth's own colours so the three booths read as different vendors without
+       * adding new props.
+       */}
+      <Vendor
+        position={[0, 0, 0.2]}
+        shirt={awningColor}
+        turban={color}
+        phase={title.length * 0.3}
+      />
 
       {POSTS.map(([x, z], i) => (
         <mesh key={i} position={[x, 1.5, z]} castShadow>

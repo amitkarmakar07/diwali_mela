@@ -16,6 +16,7 @@ import {
   Garland,
   ClothSkirt,
   GlowBackdrop,
+  Vendor,
 } from '../../world/Decor';
 
 const { laneHalfLength, laneWidth, stallOffset, linkZ, position } = FOOD_STREET;
@@ -26,52 +27,8 @@ const LANE_EDGE_X = laneWidth / 2;
 const WOOD = '#4a3a30';
 const WOOD_DARK = '#2f2621';
 const METAL = '#3a3240';
-const SKIN = '#c89a68';
 const CLOTH_A = '#7a3b2e';
 const CLOTH_B = '#2e5c52';
-
-function Vendor({
-  position: pos,
-  shirt = CLOTH_A,
-  phase = 0,
-}: {
-  position: [number, number, number];
-  shirt?: string;
-  phase?: number;
-}) {
-  const group = useRef<Group>(null);
-
-  useFrame((state) => {
-    if (!group.current) return;
-    group.current.rotation.z = Math.sin(state.clock.elapsedTime * 1.2 + phase) * 0.025;
-    group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5 + phase) * 0.08;
-  });
-
-  return (
-    <group position={pos} ref={group}>
-      <mesh position={[0, 0.75, 0]} castShadow>
-        <cylinderGeometry args={[0.22, 0.28, 0.9, 10]} />
-        <meshStandardMaterial color={shirt} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 1.35, 0]} castShadow>
-        <sphereGeometry args={[0.18, 12, 10]} />
-        <meshStandardMaterial color={SKIN} roughness={0.7} />
-      </mesh>
-      <mesh position={[0, 1.52, 0]}>
-        <torusGeometry args={[0.2, 0.08, 6, 12]} />
-        <meshStandardMaterial color={PALETTE.marigold} roughness={0.8} />
-      </mesh>
-      <mesh position={[-0.26, 0.95, 0]} rotation={[0, 0, 0.3]} castShadow>
-        <cylinderGeometry args={[0.07, 0.08, 0.55, 8]} />
-        <meshStandardMaterial color={shirt} roughness={0.85} />
-      </mesh>
-      <mesh position={[0.26, 0.95, 0]} rotation={[0, 0, -0.3]} castShadow>
-        <cylinderGeometry args={[0.07, 0.08, 0.55, 8]} />
-        <meshStandardMaterial color={shirt} roughness={0.85} />
-      </mesh>
-    </group>
-  );
-}
 
 function SteamPuffs({ position: pos, count = 3 }: { position: [number, number, number]; count?: number }) {
   const refs = useRef<(Mesh | null)[]>([]);
@@ -247,7 +204,9 @@ function StallFrame({
       <StringLights from={[-1.5, 2.0, 0.42]} to={[1.5, 2.0, 0.42]} count={9} sag={0.08} />
 
       {/* Glowing striped backdrop behind the goods, on the far side from the counter front. */}
-      <GlowBackdrop position={[0, 1.6, -0.52]} width={2.6} height={1.1} />
+      {/* Set back past the vendor at z = -0.75. At the counter's back edge the lit panel
+          stood in front of them and hid the shopkeeper, which read as a shuttered stall. */}
+      <GlowBackdrop position={[0, 1.6, -1.25]} width={2.6} height={1.1} />
 
       {/* Patterned cloth skirt on the counter's front face, same side as the awning/sign. */}
       <ClothSkirt position={[0, 0.28, 0.58]} width={2.6} height={0.5} />
