@@ -8,12 +8,9 @@ export function PauseMenu() {
   }
 
   const handleResume = () => {
+    // Resuming puts the mode back to 'exploring' and PlayerController re-locks on that
+    // transition. A second request from here would race it on the same event.
     useGame.getState().setPaused(false);
-    try {
-      document.querySelector('canvas')?.requestPointerLock();
-    } catch (e) {
-      // Browser may reject pointer lock request
-    }
   };
 
   return (

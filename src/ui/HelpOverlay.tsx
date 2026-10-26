@@ -18,6 +18,15 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
           <div>Esc — Pause</div>
         </div>
 
+        <div className="hud-pause-controls">
+          <div className="hud-pause-controls-title">HUD shortcuts</div>
+          <div>I — Bag</div>
+          <div>M — Mute / unmute sound</div>
+          <div>H — Help (this screen)</div>
+          <div>C — Photo mode</div>
+          <div>O — Settings</div>
+        </div>
+
         <p className="hud-modal-body">
           Walk the promenade to find lit diyas, ride the Ferris wheel, carousel and swing boat,
           browse the shopping &amp; food street, play the games in the Fun Zone and catch the

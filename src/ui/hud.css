@@ -46,6 +46,17 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+.hud-coin-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hud-coin-icon {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 3px rgba(255, 204, 51, 0.5));
+}
+
 .hud-golden-badge {
   background: rgba(255, 204, 51, 0.15);
   border: 1px solid #ffcc33;
@@ -108,6 +119,20 @@
 
 .hud-bar-btn svg {
   flex-shrink: 0;
+}
+
+.hud-bar-key {
+  flex-shrink: 0;
+  min-width: 1.3em;
+  text-align: center;
+  background: rgba(255, 204, 51, 0.18);
+  border: 1px solid rgba(255, 204, 51, 0.5);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffcc33;
+  letter-spacing: 0;
 }
 
 .hud-bar-photo {

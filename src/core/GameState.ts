@@ -30,7 +30,16 @@ export interface MiniGameStatus {
 
 export type PanelContent =
   | { type: 'info'; title: string; body: string }
-  | { type: 'shop'; title: string; subtitle?: string; items: ShopItem[] };
+  | { type: 'shop'; title: string; subtitle?: string; items: ShopItem[] }
+  | {
+      type: 'confirm';
+      title: string;
+      body: string;
+      confirmLabel: string;
+      cancelLabel?: string;
+      /** Runs after the panel closes, so the action sees 'exploring', not 'panel'. */
+      onConfirm: () => void;
+    };
 
 interface GameState {
   mode: PlayerMode;
@@ -87,6 +96,67 @@ export function msSinceModeTransition() {
   return performance.now() - lastTransitionAt;
 }
 
+/**
+ * Progress survives a refresh. Only what the player earned is kept — mode, panels and
+ * ride state are session-scoped and restoring them would reload the player mid-ride.
+ * Every read and write is guarded: storage throws in private mode and can return
+ * anything, so a corrupt blob must degrade to a fresh mela rather than a broken one.
+ */
+const STORAGE_KEY = 'diwali-mela/progress/v1';
+
+interface PersistedProgress {
+  coins: number;
+  bagItems: BagItem[];
+  litDiyaCount: number;
+  foundGoldenDiya: boolean;
+}
+
+function loadProgress(): PersistedProgress {
+  const empty: PersistedProgress = {
+    coins: 0,
+    bagItems: [],
+    litDiyaCount: 0,
+    foundGoldenDiya: false,
+  };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw) as Partial<PersistedProgress>;
+    return {
+      coins: Number.isFinite(parsed.coins) ? Number(parsed.coins) : 0,
+      bagItems: Array.isArray(parsed.bagItems)
+        ? parsed.bagItems.filter(
+            (b): b is BagItem =>
+              !!b && typeof b.name === 'string' && Number.isFinite(b.quantity),
+          )
+        : [],
+      litDiyaCount: Number.isFinite(parsed.litDiyaCount) ? Number(parsed.litDiyaCount) : 0,
+      foundGoldenDiya: parsed.foundGoldenDiya === true,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+function saveProgress(p: PersistedProgress) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+  } catch {
+    /* quota or private mode — progress just stays session-only */
+  }
+}
+
+export function resetProgress() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+  useGame.setState({ coins: 0, bagItems: [], litDiyaCount: 0, foundGoldenDiya: false });
+}
+
+const restored = loadProgress();
+
 export const useGame = create<GameState>((set, get) => ({
   mode: 'exploring',
   started: false,
@@ -96,11 +166,11 @@ export const useGame = create<GameState>((set, get) => ({
   activeGame: null,
   gameStatus: null,
   activePanel: null,
-  litDiyaCount: 0,
-  foundGoldenDiya: false,
+  litDiyaCount: restored.litDiyaCount,
+  foundGoldenDiya: restored.foundGoldenDiya,
   toast: null,
-  bagItems: [],
-  coins: 0,
+  bagItems: restored.bagItems,
+  coins: restored.coins,
 
   start: () => {
     markModeTransition();
@@ -187,3 +257,22 @@ export const useGame = create<GameState>((set, get) => ({
     }
   },
 }));
+
+// Persist only the earned fields, and only when one of them actually changes — the store
+// also churns on mode, nearest target and toasts many times a second while walking.
+useGame.subscribe((state, prev) => {
+  if (
+    state.coins === prev.coins &&
+    state.bagItems === prev.bagItems &&
+    state.litDiyaCount === prev.litDiyaCount &&
+    state.foundGoldenDiya === prev.foundGoldenDiya
+  ) {
+    return;
+  }
+  saveProgress({
+    coins: state.coins,
+    bagItems: state.bagItems,
+    litDiyaCount: state.litDiyaCount,
+    foundGoldenDiya: state.foundGoldenDiya,
+  });
+});

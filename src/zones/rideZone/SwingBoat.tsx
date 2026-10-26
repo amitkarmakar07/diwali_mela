@@ -44,12 +44,26 @@ export function SwingBoat() {
   });
 
   const board = () => {
-    const { spendCoins, showToast, enterRide } = useGame.getState();
-    if (!spendCoins(RIDE_COST)) {
+    const { coins, showToast, openPanel } = useGame.getState();
+    if (coins < RIDE_COST) {
       showToast(`The swing boat costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
       return;
     }
-    enterRide('swing-boat');
+    openPanel({
+      type: 'confirm',
+      title: 'Ride the Swing Boat',
+      body: `This ride costs ${RIDE_COST} coins. You have ${coins}. Do you want to ride?`,
+      confirmLabel: 'Yes, ride',
+      cancelLabel: 'No',
+      onConfirm: () => {
+        // Re-check at confirm time, not the earlier check, so cancelling never spends.
+        if (!useGame.getState().spendCoins(RIDE_COST)) {
+          useGame.getState().showToast(`You no longer have ${RIDE_COST} coins for the swing boat.`);
+          return;
+        }
+        useGame.getState().enterRide('swing-boat');
+      },
+    });
   };
 
   return (

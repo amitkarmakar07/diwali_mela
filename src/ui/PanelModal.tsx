@@ -24,12 +24,22 @@ export function PanelModal() {
     closePanel();
   };
 
+  const confirmAction = () => {
+    if (activePanel.type !== 'confirm') return;
+    const { onConfirm } = activePanel;
+    // Close first — onConfirm must see mode 'exploring', not 'panel' (see GameState's comment).
+    closePanel();
+    onConfirm();
+  };
+
   return (
     <div className="hud-modal-overlay">
       <div className="hud-modal-card">
         <h2 className="hud-modal-title">{activePanel.title}</h2>
 
         {activePanel.type === 'info' && <p className="hud-modal-body">{activePanel.body}</p>}
+
+        {activePanel.type === 'confirm' && <p className="hud-modal-body">{activePanel.body}</p>}
 
         {activePanel.type === 'shop' && (
           <>
@@ -54,17 +64,30 @@ export function PanelModal() {
           </>
         )}
 
-        <div className="hud-modal-helper">Press Esc to close</div>
+        {activePanel.type !== 'confirm' && <div className="hud-modal-helper">Press Esc to close</div>}
 
         <div className="hud-modal-button-group">
-          {activePanel.type === 'shop' && (
-            <button className="hud-modal-buy" onClick={buy} disabled={selected === null}>
-              {selected === null ? 'Pick something' : 'Take it'}
-            </button>
+          {activePanel.type === 'confirm' ? (
+            <>
+              <button className="hud-modal-close" onClick={closePanel}>
+                {activePanel.cancelLabel ?? 'Cancel'}
+              </button>
+              <button className="hud-modal-buy" onClick={confirmAction}>
+                {activePanel.confirmLabel}
+              </button>
+            </>
+          ) : (
+            <>
+              {activePanel.type === 'shop' && (
+                <button className="hud-modal-buy" onClick={buy} disabled={selected === null}>
+                  {selected === null ? 'Pick something' : 'Take it'}
+                </button>
+              )}
+              <button className="hud-modal-close" onClick={closePanel}>
+                Close
+              </button>
+            </>
           )}
-          <button className="hud-modal-close" onClick={closePanel}>
-            Close
-          </button>
         </div>
       </div>
     </div>

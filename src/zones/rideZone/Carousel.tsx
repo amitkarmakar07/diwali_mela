@@ -84,12 +84,30 @@ export function Carousel() {
       }
     });
     boardedIndex.current = best;
-    const { spendCoins, showToast, enterRide } = useGame.getState();
-    if (!spendCoins(RIDE_COST)) {
+    const { coins, showToast, openPanel } = useGame.getState();
+    // Affordability gate happens before the prompt, same as the other rides, so an
+    // unaffordable ride never shows a confirm the player can't accept.
+    if (coins < RIDE_COST) {
       showToast(`The carousel costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
       return;
     }
-    enterRide('carousel');
+    openPanel({
+      type: 'confirm',
+      title: 'Ride the Horse Carousel',
+      body: `This ride costs ${RIDE_COST} coins. You have ${coins}. Do you want to ride?`,
+      confirmLabel: 'Yes, ride',
+      cancelLabel: 'No',
+      onConfirm: () => {
+        // boardedIndex was already picked above; that only steers the camera's seat
+        // tracking and is harmless to settle early, cancelled or not. Re-check the
+        // spend here so cancelling costs nothing.
+        if (!useGame.getState().spendCoins(RIDE_COST)) {
+          useGame.getState().showToast(`You no longer have ${RIDE_COST} coins for the carousel.`);
+          return;
+        }
+        useGame.getState().enterRide('carousel');
+      },
+    });
   };
 
   return (

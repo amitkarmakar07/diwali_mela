@@ -57,12 +57,29 @@ export function FerrisWheel() {
       }
     });
     boardedIndex.current = best;
-    const { spendCoins, showToast, enterRide } = useGame.getState();
-    if (!spendCoins(RIDE_COST)) {
+    const { coins, showToast, openPanel } = useGame.getState();
+    // Check affordability before prompting so a player who can't pay never sees a
+    // confirm they can't accept - they get the same refusal toast as before.
+    if (coins < RIDE_COST) {
       showToast(`The Ferris wheel costs ${RIDE_COST} coins. Light diyas or win a stall game to earn some.`);
       return;
     }
-    enterRide('ferris-wheel');
+    openPanel({
+      type: 'confirm',
+      title: 'Ride the Giant Ferris Wheel',
+      body: `This ride costs ${RIDE_COST} coins. You have ${coins}. Do you want to ride?`,
+      confirmLabel: 'Yes, ride',
+      cancelLabel: 'No',
+      onConfirm: () => {
+        // Re-check here, not just at prompt time - coins could have been spent elsewhere
+        // while the panel was open, and cancelling must never cost anything.
+        if (!useGame.getState().spendCoins(RIDE_COST)) {
+          useGame.getState().showToast(`You no longer have ${RIDE_COST} coins for the Ferris wheel.`);
+          return;
+        }
+        useGame.getState().enterRide('ferris-wheel');
+      },
+    });
   };
 
   return (

@@ -360,37 +360,20 @@ function ZoneLighting() {
 }
 
 /**
- * Chrome (and others) impose a short cooldown on requestPointerLock right after any
- * exitPointerLock on the page — the film's clickable-iframe overlay calls exitPointerLock
- * on mount, so a bare re-lock attempt on exit can fail silently. Retry a few times with
- * backoff; PlayerController's own canvas-click handler is still there as a final fallback.
- */
-function reacquirePointerLock(canvas: HTMLElement) {
-  let attempt = 0;
-  const tryLock = () => {
-    if (document.pointerLockElement === canvas) return;
-    const result = canvas.requestPointerLock?.() as unknown;
-    if (result && typeof (result as Promise<void>).catch === 'function') {
-      (result as Promise<void>).catch(() => {
-        attempt += 1;
-        if (attempt < 4) setTimeout(tryLock, 150 * attempt);
-      });
-    }
-  };
-  tryLock();
-}
-
-/**
  * Follows RideCameraRig/CulturalStageCameraRig's pattern (own E subscription, since
  * InteractionManager ignores input once mode leaves 'exploring') but with no auto-exit
  * duration — the film runs until the viewer presses E. On sitting down it snaps the
  * player's look to the screen so E never starts the show mid-glance at something else;
- * on leaving it levels the heading and fights to restore pointer-locked mouse look,
- * which the film's overlay released to make the iframe clickable.
+ * on leaving it levels the heading and hands off to exitRide(). Re-acquiring pointer lock
+ * (released on entry so the iframe is clickable) is PlayerController's job alone — it
+ * already retries on every mode return to 'exploring' via its own store subscription.
+ * A second retry loop here used to race that one: two independent requestPointerLock
+ * callers firing on the same transition caused repeated lock/unlock churn (each unlock
+ * while "exploring" trips PlayerController's auto-pause), which read as the reported
+ * lag/freeze right after pressing E.
  */
 function MovieCameraRig({ seat, facingYaw }: { seat: Vector3; facingYaw: number }) {
   const camera = useThree((s) => s.camera);
-  const canvas = useThree((s) => s.gl.domElement);
   const elapsed = useRef(0);
   const wasActive = useRef(false);
   const [sub] = useKeyboardControls<Control>();
@@ -399,8 +382,7 @@ function MovieCameraRig({ seat, facingYaw }: { seat: Vector3; facingYaw: number 
     playerLook.yaw = facingYaw;
     playerLook.pitch = 0;
     useGame.getState().exitRide();
-    reacquirePointerLock(canvas);
-  }, [facingYaw, canvas]);
+  }, [facingYaw]);
 
   useEffect(
     () =>
