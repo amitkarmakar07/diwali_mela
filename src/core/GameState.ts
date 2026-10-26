@@ -30,7 +30,14 @@ export interface MiniGameStatus {
 
 export type PanelContent =
   | { type: 'info'; title: string; body: string }
-  | { type: 'shop'; title: string; subtitle?: string; items: ShopItem[] }
+  | {
+      type: 'shop';
+      title: string;
+      subtitle?: string;
+      items: ShopItem[];
+      /** Shop-specific clip (a path under /audio) played while the panel is open. */
+      audio?: string;
+    }
   | {
       type: 'confirm';
       title: string;
@@ -90,6 +97,21 @@ let lastTransitionAt = -Infinity;
 
 export function markModeTransition() {
   lastTransitionAt = performance.now();
+}
+
+/**
+ * A HUD overlay releases pointer lock on purpose so it can be clicked. PlayerController
+ * otherwise reads that same unlock as the player hitting Escape and pauses the game —
+ * which made opening anything by keyboard shortcut flash the pause menu first.
+ */
+let uiOverlayOpen = false;
+
+export function setUiOverlayOpen(open: boolean) {
+  uiOverlayOpen = open;
+}
+
+export function isUiOverlayOpen() {
+  return uiOverlayOpen;
 }
 
 export function msSinceModeTransition() {

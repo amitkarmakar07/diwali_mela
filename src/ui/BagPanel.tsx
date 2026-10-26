@@ -33,6 +33,8 @@ export function BagPanel({ onClose }: BagPanelProps) {
           </ul>
         )}
 
+        <div className="hud-modal-helper">Press Enter or Esc to go back</div>
+
         <div className="hud-modal-button-group">
           <button className="hud-modal-close" onClick={onClose}>
             Close

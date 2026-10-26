@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Text } from "@react-three/drei";
 import {
   CuboidCollider,
   CylinderCollider,
@@ -11,7 +12,7 @@ import { FireworksSystem } from "./FireworksSystem";
 import { DiyaCarrySystem } from "./DiyaCarrySystem";
 import { RangoliCreator } from "./RangoliCreator";
 import { SkyLanterns } from "./SkyLanterns";
-import { LampPost } from "../../world/Decor";
+import { LampPost, StringLights } from "../../world/Decor";
 
 const [cx, cz] = ZONES.courtyard;
 
@@ -36,6 +37,70 @@ const RANGOLI_RINGS: Array<{ inner: number; outer: number; color: string }> = [
 ];
 
 const SKY_LANTERN_RELEASE: [number, number, number] = [-7, 0, -6];
+
+/** Lit archway framing the wall's deliberate opening (OPENING_CENTER = pi, so the gap
+ * sits at local (-WALL_RADIUS, 0, 0)). Pillars sit well inside the opening's angular
+ * half-width (OPENING_HALF * WALL_RADIUS =~ 12.3m clear each way from centre), leaving
+ * the walkway through the middle untouched. Styled after the main entrance arch and the
+ * movie-zone gate: pillars + cone caps + beam + name board. */
+const GATE_LOCAL_X = -WALL_RADIUS;
+const GATE_HALF_SPAN = 4.4;
+const GATE_HEIGHT = 5.2;
+const GATE_PILLAR_SIZE = 0.8;
+
+/** Lit "Diya Zone" archway at the courtyard wall's opening. The player arrives from
+ * outside at local x < GATE_LOCAL_X, walking in +x toward the courtyard interior — so
+ * the sign must read correctly from the -X side. Drei <Text> faces +Z by default; a
+ * -90 deg yaw maps that forward face to -X (sin(-90)=-1, cos(-90)=0), the opposite of
+ * the movie-zone gate's +90 deg yaw, whose approach is from the +X side instead. */
+function DiyaGate() {
+  return (
+    <group position={[GATE_LOCAL_X, 0, 0]}>
+      <RigidBody type="fixed" colliders={false}>
+        {[-GATE_HALF_SPAN, GATE_HALF_SPAN].map((z) => (
+          <group key={z}>
+            <CuboidCollider
+              args={[GATE_PILLAR_SIZE / 2, GATE_HEIGHT / 2, GATE_PILLAR_SIZE / 2]}
+              position={[0, GATE_HEIGHT / 2, z]}
+            />
+            <mesh position={[0, GATE_HEIGHT / 2, z]} castShadow>
+              <boxGeometry args={[GATE_PILLAR_SIZE, GATE_HEIGHT, GATE_PILLAR_SIZE]} />
+              <meshStandardMaterial color={PALETTE.deepRed} emissive={PALETTE.deepRed} emissiveIntensity={0.25} roughness={0.75} />
+            </mesh>
+            <mesh position={[0, GATE_HEIGHT + 0.3, z]}>
+              <coneGeometry args={[0.5, 0.6, 4]} />
+              <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.warm} emissiveIntensity={0.35} roughness={0.6} />
+            </mesh>
+          </group>
+        ))}
+        <mesh position={[0, GATE_HEIGHT + 0.55, 0]}>
+          <boxGeometry args={[GATE_PILLAR_SIZE * 1.2, 0.5, GATE_HALF_SPAN * 2 + GATE_PILLAR_SIZE]} />
+          <meshStandardMaterial color={PALETTE.gold} emissive={PALETTE.warm} emissiveIntensity={0.3} metalness={0.3} roughness={0.5} />
+        </mesh>
+      </RigidBody>
+
+      {/* Name board on the beam, facing -x so it reads coming in from outside the courtyard. */}
+      <mesh position={[0, GATE_HEIGHT + 1.2, 0]}>
+        <boxGeometry args={[0.1, 0.9, GATE_HALF_SPAN * 1.4]} />
+        <meshStandardMaterial color={PALETTE.deepRed} roughness={0.75} />
+      </mesh>
+      <Text
+        position={[-0.07, GATE_HEIGHT + 1.2, 0]}
+        rotation={[0, -Math.PI / 2, 0]}
+        font="/fonts/Mukta-Bold.ttf"
+        fontSize={0.4}
+        color={PALETTE.warmBright}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={GATE_HALF_SPAN * 1.3}
+      >
+        Diya Zone
+      </Text>
+
+      <StringLights from={[0, GATE_HEIGHT, -GATE_HALF_SPAN]} to={[0, GATE_HEIGHT, GATE_HALF_SPAN]} count={8} sag={0.12} />
+    </group>
+  );
+}
 
 const STACKED_DIYA_OFFSETS: Array<[number, number]> = [
   [-0.5, 0.15],
@@ -202,6 +267,8 @@ export function CourtyardZone() {
           color={PALETTE.marigold}
         />
         <LampPost position={[14, 0, 0]} height={5} color={PALETTE.teal} />
+
+        <DiyaGate />
 
         {/* Diyas carry no light until they're lit, so without this the ring the player is
             meant to walk up to and light sits in the dark and reads as unfinished. */}

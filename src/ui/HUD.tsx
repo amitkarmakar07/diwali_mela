@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { initAudio, setGameAudioPaused, useAudioStore } from '../audio/audioManager';
-import { useGame, msSinceModeTransition } from '../core/GameState';
+import { useGame, msSinceModeTransition, setUiOverlayOpen } from '../core/GameState';
 import { BagPanel } from './BagPanel';
 import { HelpOverlay } from './HelpOverlay';
 import { HudBar, PhotoModeBar } from './HudBar';
@@ -64,37 +64,60 @@ export function HUD() {
   };
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-
+    // Shared by both Escape and Enter so the two keys close overlays in identical
+    // priority order. Returns whether it actually closed something, so Enter (unlike
+    // Escape) can stay a no-op rather than falling through to the pause toggle below.
+    const closeTopOverlay = (): boolean => {
       if (photoActive) {
         setPhotoActive(false);
-        return;
+        return true;
       }
       if (helpOpen) {
         setHelpOpen(false);
-        return;
+        return true;
       }
       if (settingsOpen) {
         setSettingsOpen(false);
-        return;
+        return true;
       }
       if (bagOpen) {
         setBagOpen(false);
+        return true;
+      }
+      const state = useGame.getState();
+      if (state.activePanel) {
+        // Also covers the confirm panel: this closes it without running onConfirm,
+        // which is the "go back" reading Enter is meant to have everywhere.
+        state.closePanel();
+        return true;
+      }
+      return false;
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (closeTopOverlay()) return;
+
+        const state = useGame.getState();
+        if (state.mode === 'paused') {
+          // Resuming returns the mode to 'exploring', and PlayerController re-locks on
+          // that transition. Asking here as well put two uncoordinated requests on one
+          // event, which is what made leaving the film feel like the game had hung.
+          state.setPaused(false);
+        } else {
+          state.setPaused(true);
+        }
         return;
       }
 
-      const state = useGame.getState();
-      if (state.activePanel) {
-        state.closePanel();
-      } else if (state.mode === 'paused') {
-        // Resuming returns the mode to 'exploring', and PlayerController re-locks on that
-        // transition. Asking here as well put two uncoordinated requests on one event,
-        // which is what made leaving the film feel like the game had hung.
-        state.setPaused(false);
-      } else {
-        state.setPaused(true);
+      if (event.key === 'Enter') {
+        // Enter only ever means "go back" — it never opens the pause menu, and
+        // preventDefault here (before the browser's own default action runs) stops a
+        // focused button (e.g. "Take it") from also firing its click on this same press.
+        if (closeTopOverlay()) {
+          event.preventDefault();
+        }
       }
     };
 
@@ -175,6 +198,8 @@ export function HUD() {
   useEffect(() => {
     if (!started) return;
     const overlayOpen = Boolean(activePanel) || helpOpen || settingsOpen || bagOpen || photoActive;
+    // Tell PlayerController this unlock is intentional, or it pauses the game on us.
+    setUiOverlayOpen(overlayOpen);
     if (overlayOpen) {
       document.exitPointerLock();
       return;

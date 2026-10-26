@@ -103,6 +103,7 @@ export function PhotoModeBar({ onExit, onSave, saveMessage }: PhotoModeBarProps)
   return (
     <div className="hud-bar hud-bar-photo">
       {saveMessage && <span className="hud-bar-save-msg">{saveMessage}</span>}
+      <span className="hud-bar-hint">Press Enter or Esc to go back</span>
       <button type="button" className="hud-bar-btn hud-bar-btn-save" onClick={onSave}>
         Save photo
       </button>

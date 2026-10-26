@@ -34,6 +34,7 @@ interface StallSpec {
   label: string;
   subtitle: string;
   items: ShopItem[];
+  audio?: string;
 }
 
 const STALL_SPECS: StallSpec[] = [
@@ -52,6 +53,7 @@ const STALL_SPECS: StallSpec[] = [
       { name: 'Papdi Chaat', price: 35 },
       { name: 'Aloo Tikki Chaat', price: 40, note: 'Crisp potato patties, two chutneys' },
     ],
+    audio: '/audio/chat_centre.mp3',
   },
   {
     x: STALL_X,
@@ -68,6 +70,7 @@ const STALL_SPECS: StallSpec[] = [
       { name: 'Lemon Pickle (Nimbu Achar)', price: 60 },
       { name: 'Garlic Pickle (Lehsun Achar)', price: 75 },
     ],
+    audio: '/audio/aachar.mp3',
   },
   {
     x: -STALL_X,
@@ -84,6 +87,7 @@ const STALL_SPECS: StallSpec[] = [
       { name: 'Toy Drum (Dholak)', price: 90, note: 'Hand-painted, kid-sized' },
       { name: 'Kite (Patang)', price: 20, note: 'Comes with a reel of string' },
     ],
+    audio: '/audio/khilona_store.mp3',
   },
   {
     x: STALL_X,
@@ -100,6 +104,7 @@ const STALL_SPECS: StallSpec[] = [
       { name: 'Soan Papdi', price: 40 },
       { name: 'Rasgulla', price: 45, note: 'Soft, spongy, served chilled' },
     ],
+    audio: '/audio/mithai_store.mp3',
   },
   {
     x: -STALL_X,
@@ -132,6 +137,7 @@ const STALL_SPECS: StallSpec[] = [
       { name: 'Maang Tikka', price: 150 },
       { name: 'Silver Anklet Pair', price: 200 },
     ],
+    audio: '/audio/jewellery_store.mp3',
   },
 ];
 
@@ -182,6 +188,7 @@ export function PromenadeZone() {
                 title: s.name,
                 subtitle: s.subtitle,
                 items: s.items,
+                audio: s.audio,
               })
             }
           />

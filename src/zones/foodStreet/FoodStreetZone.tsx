@@ -240,7 +240,7 @@ function JalebiStall({ position: pos, rotation }: { position: [number, number, n
         onInteract={() =>
           useGame.getState().openPanel({
             type: 'shop',
-            title: 'Jalebi & Sweets',
+            title: 'Lakshmi Jalebi Shop',
             subtitle: 'Hot from the pan — mind your fingers!',
             items: [
               { name: 'Jalebi', price: 40, note: 'Crisp, syrup-soaked spirals' },
@@ -248,10 +248,11 @@ function JalebiStall({ position: pos, rotation }: { position: [number, number, n
               { name: 'Kaju Barfi', price: 60, note: 'Cashew, cut in diamonds' },
               { name: 'Gulab Jamun', price: 35, note: 'Served warm, extra syrup on request' },
             ],
+            audio: '/audio/jalebi.mp3',
           })
         }
       />
-      <StallFrame color={PALETTE.marigold} awningColor={PALETTE.gold} name="Lakshmi Sweets Bhandar" />
+      <StallFrame color={PALETTE.marigold} awningColor={PALETTE.gold} name="Lakshmi Jalebi Shop" />
       <mesh position={[0, 1.08, 0.2]}>
         <cylinderGeometry args={[0.55, 0.6, 0.08, 24]} />
         <meshStandardMaterial color={METAL} metalness={0.6} roughness={0.4} />
@@ -354,6 +355,7 @@ function ToyShop({ position: pos, rotation }: { position: [number, number, numbe
               { name: 'Wind-up Toy Car', price: 80 },
               { name: 'Balloon Bunch', price: 25, note: 'Pick any three colours' },
             ],
+            audio: '/audio/khilona_store.mp3',
           })
         }
       />
@@ -487,6 +489,7 @@ interface FillerSpec {
   label: string;
   subtitle: string;
   items: ShopItem[];
+  audio?: string;
 }
 
 const FILLER_SPECS: FillerSpec[] = [
@@ -519,6 +522,7 @@ const FILLER_SPECS: FillerSpec[] = [
       { name: 'Mini Pinwheel', price: 15 },
       { name: 'Bubble Wand', price: 20 },
     ],
+    audio: '/audio/khilona_store.mp3',
   },
   {
     x: -LANE_EDGE_X - 1.3,
@@ -534,6 +538,7 @@ const FILLER_SPECS: FillerSpec[] = [
       { name: 'Coconut Barfi', price: 40 },
       { name: 'Milk Cake', price: 55 },
     ],
+    audio: '/audio/mithai_store.mp3',
   },
 ];
 
@@ -611,6 +616,7 @@ export function FoodStreetZone() {
                 title: f.name,
                 subtitle: f.subtitle,
                 items: f.items,
+                audio: f.audio,
               })
             }
           />

@@ -294,7 +294,7 @@ function MovieGate() {
         anchorY="middle"
         maxWidth={pathSideOffset * 1.3}
       >
-        Outdoor Movie Zone
+        Movie Zone
       </Text>
 
       <StringLights from={[0, gateHeight, -pathSideOffset]} to={[0, gateHeight, pathSideOffset]} count={8} sag={0.12} />

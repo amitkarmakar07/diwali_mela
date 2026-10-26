@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { playCartChime } from '../audio/audioManager';
+import { playCartChime, playShopClip, setGameAudioPaused, stopShopClip } from '../audio/audioManager';
 import { useGame } from '../core/GameState';
 
 export function PanelModal() {
@@ -9,6 +9,23 @@ export function PanelModal() {
 
   useEffect(() => {
     setSelected(null);
+  }, [activePanel]);
+
+  // Shop clip takes over from ambience + radio for as long as this panel stays open, on
+  // every close path (Close, buy, Esc, Enter) since they all route through closePanel
+  // and land here as activePanel becoming null — reusing setGameAudioPaused's own
+  // pause/resume bookkeeping rather than duplicating it.
+  useEffect(() => {
+    if (activePanel?.type === 'shop' && activePanel.audio) {
+      const src = activePanel.audio;
+      setGameAudioPaused(true);
+      playShopClip(src);
+      return () => {
+        stopShopClip();
+        setGameAudioPaused(false);
+      };
+    }
+    return undefined;
   }, [activePanel]);
 
   if (!activePanel) return null;
@@ -64,7 +81,11 @@ export function PanelModal() {
           </>
         )}
 
-        {activePanel.type !== 'confirm' && <div className="hud-modal-helper">Press Esc to close</div>}
+        <div className="hud-modal-helper">
+          {activePanel.type === 'confirm'
+            ? 'Press Enter to go back without choosing — Esc works too'
+            : 'Press Enter or Esc to go back'}
+        </div>
 
         <div className="hud-modal-button-group">
           {activePanel.type === 'confirm' ? (

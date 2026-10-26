@@ -28,6 +28,7 @@ interface AudioStoreState {
 
 let bgAudio: HTMLAudioElement | null = null;
 let radioAudio: HTMLAudioElement | null = null;
+let shopAudio: HTMLAudioElement | null = null;
 let crackerPool: HTMLAudioElement[] = [];
 let crackerPoolIndex = 0;
 let initialized = false;
@@ -64,6 +65,7 @@ export const useAudioStore = create<AudioStoreState>((set, get) => ({
     set({ muted });
     if (bgAudio) bgAudio.muted = muted;
     if (radioAudio) radioAudio.muted = muted;
+    if (shopAudio) shopAudio.muted = muted;
     for (const el of crackerPool) el.muted = muted;
   },
 
@@ -174,6 +176,28 @@ export function playCrackerSound() {
   crackerPoolIndex = (crackerPoolIndex + 1) % crackerPool.length;
   el.currentTime = 0;
   safePlay(el);
+}
+
+/**
+ * Per-shop clip played while its panel is open. One shared element is reused (rather than
+ * one per shop) since only one shop panel can ever be open at a time.
+ */
+export function playShopClip(src: string) {
+  if (!initialized) return;
+  if (!shopAudio) {
+    shopAudio = new Audio();
+    shopAudio.loop = true;
+  }
+  shopAudio.muted = useAudioStore.getState().muted;
+  shopAudio.src = src;
+  shopAudio.currentTime = 0;
+  safePlay(shopAudio);
+}
+
+export function stopShopClip() {
+  if (!shopAudio) return;
+  shopAudio.pause();
+  shopAudio.currentTime = 0;
 }
 
 /**

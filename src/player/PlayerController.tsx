@@ -4,7 +4,7 @@ import { useKeyboardControls } from '@react-three/drei';
 import { CapsuleCollider, RigidBody, useRapier, type RapierRigidBody } from '@react-three/rapier';
 import { Euler, Vector3 } from 'three';
 import { PLAYER } from '../config/constants';
-import { useGame } from '../core/GameState';
+import { useGame, isUiOverlayOpen } from '../core/GameState';
 import { playerLook, playerPosition } from './playerRef';
 import type { Control } from '../core/KeyboardMap';
 
@@ -57,7 +57,9 @@ export function PlayerController() {
     const onLockChange = () => {
       const locked = document.pointerLockElement === canvas;
       const { started, mode, setPaused } = useGame.getState();
-      if (!locked && started && mode === 'exploring') setPaused(true);
+      // An overlay releases the lock deliberately; only an unprompted unlock (the player
+      // hitting Escape) should pause.
+      if (!locked && started && mode === 'exploring' && !isUiOverlayOpen()) setPaused(true);
     };
 
     // Browsers block re-locking for a moment after Escape, so let a click on the
