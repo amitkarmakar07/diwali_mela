@@ -9,6 +9,7 @@ import { Interactable } from '../../interaction/Interactable';
 import { LampPost, StringLights, Bunting } from '../../world/Decor';
 import { NPC } from '../../npc/NPC';
 import { setGameAudioPaused } from '../../audio/audioManager';
+import { clearLocalSeat, pickSeatIndex, registerSeats, setLocalSeat } from '../../net/rideSeats';
 import { playerLook } from '../../player/playerRef';
 import type { Control } from '../../core/KeyboardMap';
 
@@ -51,6 +52,13 @@ const SEAT_LOCAL_Z = benchRowZ[0] - 1.2;
  * on -z (dx = screenX - seatX = 0, dz = screenZ - seatZ = -9 - (-4.4) = -4.6) the seat-to-
  * screen yaw is atan2(-dx, -dz) = atan2(0, 4.6) = 0 — dead ahead, no turn needed. */
 const SEAT_FACING_YAW = Math.atan2(-(0 - SEAT_LOCAL_X), -(screenZ - SEAT_LOCAL_Z));
+
+/**
+ * Where friends sit to watch. Spread either side of the local viewing spot rather than on
+ * the benches, which already hold seated NPCs — and never at offset 0, or a friend would
+ * be sitting inside your own camera.
+ */
+const VIEWER_SEAT_X = [-1.6, 1.6, -3.2, 3.2, -4.8, 4.8, -6.4, 6.4];
 
 const camEuler = new Euler(0, 0, 0, 'YXZ');
 
@@ -476,8 +484,36 @@ export function MovieZone() {
     [],
   );
 
+  // Friends watching the film are placed on this client's own benches, the same way riders
+  // are placed on this client's own wheel — see net/rideSeats.
+  useEffect(
+    () =>
+      registerSeats('movie', VIEWER_SEAT_X.length, (index, out) => {
+        const offset = VIEWER_SEAT_X[index];
+        if (offset === undefined) return null;
+        out.set(
+          position[0] + SEAT_LOCAL_X + offset,
+          position[1] + seatEyeHeight,
+          position[2] + SEAT_LOCAL_Z,
+        );
+        return SEAT_FACING_YAW;
+      }),
+    [],
+  );
+
+  // Every way out of the film (E, the HUD button) funnels through exitRide, and none of
+  // them live in this file, so watch the store rather than trying to hook each one.
+  useEffect(
+    () =>
+      useGame.subscribe((state, prev) => {
+        if (prev.activeRide === RIDE_ID && state.activeRide !== RIDE_ID) clearLocalSeat();
+      }),
+    [],
+  );
+
   const startScreening = () => {
     useGame.getState().showToast('The projector flickers on — enjoy the show!');
+    setLocalSeat('movie', pickSeatIndex(VIEWER_SEAT_X.length));
     useGame.getState().enterRide(RIDE_ID);
   };
 

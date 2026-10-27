@@ -21,6 +21,13 @@ const ARM_BREATH_AMPLITUDE = 0.05;
 const WALK_SPEED_EPSILON = 0.15;
 /** Metres. Nearer than this and a friend fills the screen instead of being in it. */
 const TOO_CLOSE = 1.1;
+/**
+ * Seat resolvers hand back where a rider's EYES are, since they come from the camera rigs.
+ * An avatar's root sits this far below that: 1.05 is the project's seated eye height
+ * (MOVIE_ZONE/CULTURAL_STAGE.seatEyeHeight) and 0.24 is the seated drop, so a bench seat
+ * at eye height 1.05 puts the root at -0.24 — exactly where the seated NPCs sit.
+ */
+const SEATED_EYE_ABOVE_ROOT = 1.05 + 0.24;
 
 function activityHint(peer: PeerInfo): string | null {
   const act = peer.activity;
@@ -91,6 +98,9 @@ export function RemoteAvatar({ peer }: RemoteAvatarProps) {
     let z = motion.z;
     let yaw = motion.yw;
 
+    // Null until a seat resolves, which is also the signal to fall back to ground level.
+    let seatRootY: number | null = null;
+
     if (activity.k === 'ride' || activity.k === 'sit') {
       const seatId = activity.k === 'ride' ? activity.r : activity.p;
       const seatYaw = resolveSeat(seatId, activity.s, seatScratch);
@@ -98,6 +108,11 @@ export function RemoteAvatar({ peer }: RemoteAvatarProps) {
         x = seatScratch.x;
         z = seatScratch.z;
         yaw = seatYaw;
+        // Height matters as much as x/z here: the Ferris wheel hub is 15.5m up, so
+        // ignoring it leaves a rider standing on the ground at the foot of the wheel.
+        // Resolvers return the rider's EYE position (they were derived from the camera
+        // rig), so drop to the body root.
+        seatRootY = seatScratch.y - SEATED_EYE_ABOVE_ROOT;
       }
       // else: seat not mounted yet on this client — fall back to the interpolated
       // walking position already loaded into x/z/yaw above, per spec.
@@ -115,7 +130,7 @@ export function RemoteAvatar({ peer }: RemoteAvatarProps) {
 
     if (seated) {
       const breathe = Math.sin(s.t * BREATH_FREQ + phase);
-      g.position.y = NPC_SEATED_DROP + breathe * BREATH_AMPLITUDE;
+      g.position.y = (seatRootY ?? NPC_SEATED_DROP) + breathe * BREATH_AMPLITUDE;
       if (leftLeg.current) leftLeg.current.rotation.x = 0.95;
       if (rightLeg.current) rightLeg.current.rotation.x = 0.95;
       if (leftArm.current) leftArm.current.rotation.x = breathe * ARM_BREATH_AMPLITUDE;
@@ -139,7 +154,7 @@ export function RemoteAvatar({ peer }: RemoteAvatarProps) {
   });
 
   return (
-    <group ref={root}>
+    <group ref={root} name={`peer:${peer.id}`}>
       <HumanoidBody
         shirtColor={peer.color}
         propColor={peer.color}

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import { Group, Vector3 } from 'three';
@@ -8,6 +8,7 @@ import { Interactable } from '../../interaction/Interactable';
 import { StringLights, Bunting } from '../../world/Decor';
 import { NPC } from '../../npc/NPC';
 import { CulturalStageCameraRig } from './CulturalStageCameraRig';
+import { clearLocalSeat, pickSeatIndex, registerSeats, setLocalSeat } from '../../net/rideSeats';
 
 const {
   position,
@@ -35,6 +36,16 @@ const {
 } = CULTURAL_STAGE;
 
 const BRANCH_LENGTH = branchInnerX - branchOuterX;
+const STAGE_ID = 'cultural-stage';
+
+/** Where friends sit in the audience: either side of the local seat, never at offset 0 or
+ *  a friend would be sitting inside your own camera. */
+const AUDIENCE_SEAT_X = [-1.6, 1.6, -3.2, 3.2, -4.8, 4.8, -6.4, 6.4];
+
+/** This project's forward is (-sin(yaw), -cos(yaw)), so this turns a seated viewer to
+ *  face the stage rather than wherever they happened to be walking. */
+const AUDIENCE_FACING_YAW = Math.atan2(-(0 - seatLocal[0]), -(stageZ - seatLocal[1]));
+
 const BRANCH_CENTER_X = (branchInnerX + branchOuterX) / 2;
 const STAGE_FRONT_Z = stageZ + stageDepth / 2;
 const STAGE_TOP = stageHeight;
@@ -255,9 +266,37 @@ export function CulturalStageZone() {
     [],
   );
 
+  // Friends in the audience sit on this client's own ground, beside the local seat — see
+  // net/rideSeats for why a seat index travels and a position doesn't.
+  useEffect(
+    () =>
+      registerSeats('stage', AUDIENCE_SEAT_X.length, (index, out) => {
+        const offset = AUDIENCE_SEAT_X[index];
+        if (offset === undefined) return null;
+        out.set(
+          position[0] + seatLocal[0] + offset,
+          position[1] + seatEyeHeight,
+          position[2] + seatLocal[1],
+        );
+        return AUDIENCE_FACING_YAW;
+      }),
+    [],
+  );
+
+  // Leaving happens through the camera rig and the HUD button, neither of them here, so
+  // watch the store rather than hooking each exit.
+  useEffect(
+    () =>
+      useGame.subscribe((state, prev) => {
+        if (prev.activeRide === STAGE_ID && state.activeRide !== STAGE_ID) clearLocalSeat();
+      }),
+    [],
+  );
+
   const enterAudience = () => {
     useGame.getState().showToast('You find a seat as the dhol begins — the Ramleela troupe takes the stage.');
-    useGame.getState().enterRide('cultural-stage');
+    setLocalSeat('stage', pickSeatIndex(AUDIENCE_SEAT_X.length));
+    useGame.getState().enterRide(STAGE_ID);
   };
 
   return (

@@ -1,3 +1,4 @@
+import { selfId } from 'trystero';
 import type { Vector3 } from 'three';
 import type { Activity, RideId, SeatSpot } from './netTypes';
 
@@ -65,6 +66,18 @@ export function setLocalSeat(ride: RideId | SeatSpot, index: number): void {
 export function clearLocalSeat(): void {
   localSeat.ride = null;
   localSeat.index = 0;
+}
+
+/**
+ * A stable seat choice for places that don't pick one themselves — the film benches and
+ * the stage audience, where any seat will do. Derived from this client's own peer id so
+ * it never changes mid-session and two friends sitting down rarely land on the same spot.
+ */
+export function pickSeatIndex(count: number): number {
+  if (count <= 0) return 0;
+  let hash = 0;
+  for (let i = 0; i < selfId.length; i++) hash = (hash * 31 + selfId.charCodeAt(i)) >>> 0;
+  return hash % count;
 }
 
 /** Builds the activity to broadcast from whatever the local player is currently doing. */
