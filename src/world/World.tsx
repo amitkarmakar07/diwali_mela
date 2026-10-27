@@ -13,6 +13,7 @@ import { MovieZone } from '../zones/movieZone/MovieZone';
 import { CulturalStageZone } from '../zones/culturalStage/CulturalStageZone';
 import { NPC } from '../npc/NPC';
 import { npcWalkers, npcIdlers } from '../npc/npcPaths';
+import { RemotePlayers } from '../net/RemotePlayers';
 
 export function World() {
   return (
@@ -31,6 +32,11 @@ export function World() {
       <FunZone />
       <MovieZone />
       <CulturalStageZone />
+
+      {/* Friends in the same room. Cosmetic only — they carry no colliders, so the local
+          Rapier world never learns about them and physics can't diverge between clients.
+          Renders nothing at all when you're playing alone. */}
+      <RemotePlayers />
 
       {npcWalkers.map((w, i) => (
         <NPC

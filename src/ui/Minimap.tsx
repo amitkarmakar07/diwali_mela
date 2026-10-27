@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useGame } from '../core/GameState';
+import { useNet, peerMotion } from '../net/netStore';
 import { playerPosition, playerLook } from '../player/playerRef';
 import { WORLD, ZONES, FOOD_STREET, PALETTE } from '../config/constants';
 import './minimap.css';
@@ -41,8 +42,15 @@ export function Minimap({ enabled = true }: MinimapProps) {
 
   const markerRef = useRef<HTMLDivElement>(null);
   const wedgeRef = useRef<HTMLDivElement>(null);
+  // Keyed by peer id so the rAF loop below can update each dot's style directly without
+  // going through React state — peerMotion is mutated far too often for that.
+  const friendDotRefs = useRef(new Map<string, HTMLDivElement>());
 
   const visible = started && mode !== 'paused' && enabled;
+
+  // Only the SET of peers (ids/colors/names) comes through React; positions don't.
+  const peers = useNet((s) => s.peers);
+  const peerList = useMemo(() => Object.values(peers), [peers]);
 
   const zoneMarkers = useMemo(
     () => MAP_ZONES.map((z) => ({ ...z, ...worldToPct(z.x, z.z) })),
@@ -84,6 +92,15 @@ export function Minimap({ enabled = true }: MinimapProps) {
       if (wedge) {
         wedge.style.transform = `rotate(${-playerLook.yaw * RAD2DEG}deg)`;
       }
+
+      friendDotRefs.current.forEach((dot, id) => {
+        const motion = peerMotion.get(id);
+        if (!motion) return;
+        const pos = worldToPct(motion.x, motion.z);
+        dot.style.left = `${pos.left}%`;
+        dot.style.top = `${pos.top}%`;
+      });
+
       frame = requestAnimationFrame(tick);
     };
 
@@ -123,6 +140,21 @@ export function Minimap({ enabled = true }: MinimapProps) {
               backgroundColor: zone.color,
               color: zone.color,
             }}
+          />
+        ))}
+
+        {peerList.map((peer) => (
+          <div
+            key={peer.id}
+            ref={(el) => {
+              // Ref callback cleanup (el === null) is how a dot gets removed from the
+              // map when its peer leaves — no separate effect needed to avoid a leak.
+              if (el) friendDotRefs.current.set(peer.id, el);
+              else friendDotRefs.current.delete(peer.id);
+            }}
+            className="minimap-friend"
+            style={{ backgroundColor: peer.color, boxShadow: `0 0 6px 1px ${peer.color}` }}
+            title={peer.name}
           />
         ))}
 

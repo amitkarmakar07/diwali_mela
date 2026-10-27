@@ -174,6 +174,34 @@ P3 — large visual overhaul
 - [ ] **(3) Rangoli designs** — let the player choose between several patterns rather
       than the single fixed one.
 
+## Milestone 7 — Multiplayer (2026-10-27)
+
+Peer-to-peer via Trystero, no backend. Invite a friend with a link; see each other walk,
+ride and play. See AGENT.md §5.5 for the architecture.
+
+- [x] Network core — room lifecycle, identity handshake, 12 Hz position sends (silent when
+      standing still), interpolation 120 ms behind real time, stale-peer sweep, MAX_PEERS 8.
+- [x] Remote avatars — same `HumanoidBody` as the NPCs, no colliders, speed-driven walk
+      animation, billboarded name tag plus an activity line ("on the Ferris wheel").
+- [x] Seat publishing for all three rides, so a friend is placed in the right gondola/horse
+      /bench on each client rather than at a position that means nothing locally.
+- [x] Invite panel (F) — create/copy link, room code, who's here, name + colour picker.
+- [x] Friend dots on the minimap, kept off the React render path.
+- [x] Name prompt on the title gate when arriving via an invite link.
+- [x] Verified with two independent browser contexts: both see each other, names and
+      colours exchange, movement syncs, friend dot appears. Screenshots in the session
+      scratchpad.
+
+Known limits, by design:
+- ~6 comfortable, 8 capped. A mesh has each client uploading to every peer; past that it
+  needs a relay server (PartyKit/Cloudflare) instead.
+- Signalling rides on public nostr relays. One of Trystero's defaults (`relay.flashapp.me`)
+  was returning 503 during testing; the others carried it, but this is borrowed
+  infrastructure and is the first thing to suspect if joining breaks.
+- No TURN server, so a minority of strict mobile/corporate networks will fail to connect.
+- Coins, bag and diya progress remain **local** — deliberately, to avoid any shared
+  economy or authority. Shared diyas/fireworks are the obvious next step.
+
 ## Deferred to later milestones
 
 Ordered by the build sequence agreed after the reference study:

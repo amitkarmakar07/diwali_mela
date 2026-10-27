@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
@@ -6,6 +6,7 @@ import { Group, Vector3 } from 'three';
 import { CAROUSEL, PALETTE } from '../../config/constants';
 import { useGame, RIDE_COST } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
+import { clearLocalSeat, registerSeats, setLocalSeat } from '../../net/rideSeats';
 import { RideCameraRig, type RideLook } from './RideCameraRig';
 
 const TAU = Math.PI * 2;
@@ -27,6 +28,8 @@ export function Carousel() {
   const horseRefs = useRef<(Group | null)[]>([]);
   const angle = useRef(0);
   const boardedIndex = useRef(0);
+  // Clock kept on a ref so a seat's bob can be reproduced outside useFrame.
+  const bobTime = useRef(0);
   const seat = useMemo(() => new Vector3(), []);
   const look = useMemo<RideLook>(() => ({ yaw: 0, pitch: 0 }), []);
   const [cx, , cz] = CAROUSEL.position;
@@ -42,11 +45,38 @@ export function Carousel() {
     [],
   );
 
+  /**
+   * Writes horse `index`'s world position into `out` and returns the yaw its rider faces.
+   * The local camera and the seat registry share it so a friend on horse 3 rides THIS
+   * client's horse 3, at our own platform angle and our own point in the bob cycle.
+   */
+  const seatAt = useCallback(
+    (index: number, out: Vector3) => {
+      const h = horses[index];
+      // rotation.y sweeps +X toward -Z, so a horse authored at baseAngle b ends up at
+      // world angle -(b + spin) in (cos, sin) terms. Getting this sign wrong orbits
+      // the camera against the horses and parks it inside them.
+      const a = -(h.baseAngle + angle.current);
+      const bob = Math.sin(bobTime.current * CAROUSEL.bobSpeed + h.phase) * CAROUSEL.bobAmplitude;
+      out.set(
+        cx + Math.cos(a) * CAROUSEL.horseRadius,
+        PLATFORM_HEIGHT + CAROUSEL.seatHeight + CAROUSEL.riderEye + bob,
+        cz + Math.sin(a) * CAROUSEL.horseRadius,
+      );
+
+      // Horses are modelled facing radially outward, so look straight out along the
+      // horse's own axis; the view then sweeps with the platform on its own.
+      return Math.atan2(-Math.cos(a), -Math.sin(a));
+    },
+    [horses, cx, cz],
+  );
+
   useFrame((state, delta) => {
     angle.current = (angle.current + CAROUSEL.rotationSpeed * delta) % TAU;
     if (mount.current) mount.current.rotation.y = angle.current;
 
     const t = state.clock.elapsedTime;
+    bobTime.current = t;
     horses.forEach((h, i) => {
       const ref = horseRefs.current[i];
       if (ref)
@@ -54,23 +84,28 @@ export function Carousel() {
           CAROUSEL.seatHeight + Math.sin(t * CAROUSEL.bobSpeed + h.phase) * CAROUSEL.bobAmplitude;
     });
 
-    const boarded = horses[boardedIndex.current];
-    // rotation.y sweeps +X toward -Z, so a horse authored at baseAngle b ends up at
-    // world angle -(b + spin) in (cos, sin) terms. Getting this sign wrong orbits
-    // the camera against the horses and parks it inside them.
-    const a = -(boarded.baseAngle + angle.current);
-    const bob = Math.sin(t * CAROUSEL.bobSpeed + boarded.phase) * CAROUSEL.bobAmplitude;
-    seat.set(
-      cx + Math.cos(a) * CAROUSEL.horseRadius,
-      PLATFORM_HEIGHT + CAROUSEL.seatHeight + CAROUSEL.riderEye + bob,
-      cz + Math.sin(a) * CAROUSEL.horseRadius,
-    );
-
-    // Horses are modelled facing radially outward, so look straight out along the
-    // horse's own axis; the view then sweeps with the platform on its own.
-    look.yaw = Math.atan2(-Math.cos(a), -Math.sin(a));
+    look.yaw = seatAt(boardedIndex.current, seat);
     look.pitch = CAROUSEL.viewPitch;
   });
+
+  useEffect(
+    () =>
+      registerSeats('carousel', CAROUSEL.horseCount, (index, out) =>
+        index >= 0 && index < horses.length ? seatAt(index, out) : null,
+      ),
+    [horses, seatAt],
+  );
+
+  // The exit paths all sit outside this file - RideCameraRig's E key and its timer, and
+  // the HUD's leave button - so watch the store rather than duplicating them: losing the
+  // active ride means we are off the horse.
+  useEffect(
+    () =>
+      useGame.subscribe((state, prev) => {
+        if (prev.activeRide === 'carousel' && state.activeRide !== 'carousel') clearLocalSeat();
+      }),
+    [],
+  );
 
   const board = () => {
     // Board whichever horse is currently nearest the boarding pad (+Z side).
@@ -110,6 +145,9 @@ export function Carousel() {
           useGame.getState().showToast(`You no longer have ${RIDE_COST} coins for the carousel.`);
           return;
         }
+        // Publish the horse only once the fare is actually paid, so cancelling or a
+        // failed spend never leaves us broadcasting a seat we never took.
+        setLocalSeat('carousel', boardedIndex.current);
         useGame.getState().enterRide('carousel');
       },
     });

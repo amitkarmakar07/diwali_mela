@@ -3,15 +3,51 @@ interface HudBarProps {
   onPhoto: () => void;
   onSettings: () => void;
   onBag: () => void;
+  onFriends: () => void;
+  /** Friends currently in the mela with you, excluding yourself. */
+  friendCount: number;
+  /** True once this tab is in a room, so the button can show it's live. */
+  inRoom: boolean;
   bagCount: number;
   muted: boolean;
   onToggleMute: () => void;
 }
 
 /** Persistent top-right control row — the HUD's other half to the bottom-right minimap. */
-export function HudBar({ onHelp, onPhoto, onSettings, onBag, bagCount, muted, onToggleMute }: HudBarProps) {
+export function HudBar({
+  onHelp,
+  onPhoto,
+  onSettings,
+  onBag,
+  onFriends,
+  friendCount,
+  inRoom,
+  bagCount,
+  muted,
+  onToggleMute,
+}: HudBarProps) {
   return (
     <div className="hud-bar">
+      <button
+        type="button"
+        className={`hud-bar-btn${inRoom ? ' hud-bar-btn-live' : ''}`}
+        onClick={onFriends}
+        aria-label={
+          inRoom
+            ? `Friends, ${friendCount} here — key F`
+            : 'Invite friends — key F'
+        }
+        title={inRoom ? `Friends (${friendCount}) — F` : 'Invite friends (F)'}
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="9" cy="8.5" r="3.2" />
+          <path d="M3.4 19.2a5.8 5.8 0 0 1 11.2 0" strokeLinecap="round" />
+          <path d="M16.2 6.2a3 3 0 0 1 0 5.6M17.6 19.2a5.9 5.9 0 0 0-1.5-3.9" strokeLinecap="round" />
+        </svg>
+        <span className="hud-bar-label">Friends{inRoom && friendCount > 0 ? ` (${friendCount})` : ''}</span>
+        <span className="hud-bar-key" aria-hidden="true">F</span>
+      </button>
+
       <button
         type="button"
         className="hud-bar-btn"

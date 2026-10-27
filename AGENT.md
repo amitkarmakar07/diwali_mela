@@ -149,6 +149,43 @@ A ride = an `Interactable` whose `onInteract` calls `enterRide('<rideId>')`, plu
 
 `RideCameraRig.tsx` is the reference implementation. Reuse this pattern for future rides and for seated activities (movie zone, stage audience).
 
+Every ride must also publish its seats for multiplayer — see §5.5.
+
+### 5.5 Multiplayer (`src/net/`)
+
+Peer-to-peer over **Trystero 0.26** (nostr strategy), no server of our own. It is entirely
+opt-in: with `useNet().roomId === null` the network layer opens no sockets and runs no
+timers, so single player is unaffected.
+
+- `netTypes.ts` — the wire format. Payloads are `type` aliases, **not** `interface`s:
+  Trystero constrains them to its `JsonValue` and an interface has no implicit index
+  signature, so it fails that constraint.
+- `netConfig.ts` — room codes, invite links, tick rates, `MAX_PEERS` (8 — a mesh has every
+  client uploading to every other, so cost grows with the room).
+- `netStore.ts` — `useNet` holds **identity and activity only**. Positions live in the
+  module-level `peerMotion` map and never touch React, exactly like `playerPosition`;
+  routing ~12 packets/sec/peer through a store would re-render the tree constantly.
+  `stepPeerMotion(now)` interpolates `INTERP_DELAY_MS` behind real time.
+- `NetworkProvider.tsx` — the whole connection lifecycle. Mounted **outside** the Canvas,
+  so it sends on a timer rather than in `useFrame`.
+- `RemotePlayers.tsx` / `RemoteAvatar.tsx` — other players, drawn with the same
+  `HumanoidBody` as the NPCs. **Cosmetic only: never give them colliders**, or the local
+  Rapier world diverges between clients.
+
+**Seats, not positions.** Each client runs its own copy of every ride on its own clock, so
+a wheel is at a different angle on every machine and broadcasting an absolute position
+would drop a friend in mid-air. A rider broadcasts a seat *index*; each client asks its own
+ride where that seat is via `rideSeats.ts`:
+
+```ts
+registerSeats(rideId, count, (index, out) => yaw | null)  // on mount, unregister on cleanup
+setLocalSeat(rideId, index)                               // as the player boards
+```
+
+Trystero 0.26's API differs from every 0.21-era example online: `makeAction` returns an
+object (`action.send(...)`, `action.onMessage = ...`), not a `[send, get]` tuple, and
+`onPeerJoin`/`onPeerLeave` are assignable properties, not methods.
+
 ## 6. Code conventions
 
 - TypeScript throughout; prefer explicit prop interfaces on components.

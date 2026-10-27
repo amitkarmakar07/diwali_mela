@@ -2,10 +2,21 @@ import './startGate.css';
 
 interface StartGateProps {
   onEnter: () => void;
+  /** Room code from the invite link, when this visit came from a friend. */
+  joiningRoom?: string | null;
+  playerName?: string;
+  onPlayerNameChange?: (name: string) => void;
 }
 
 /** Title-gate overlay shown before `useGame().started` flips true. Pure presentation. */
-export function StartGate({ onEnter }: StartGateProps) {
+export function StartGate({
+  onEnter,
+  joiningRoom = null,
+  playerName = '',
+  onPlayerNameChange,
+}: StartGateProps) {
+  const joining = joiningRoom !== null;
+
   return (
     <div className="gate-root">
       <div className="gate-status">
@@ -17,17 +28,39 @@ export function StartGate({ onEnter }: StartGateProps) {
 
       <div className="gate-center">
         <div className="gate-title">
-          <span className="gate-title-small">WELCOME TO</span>
+          <span className="gate-title-small">{joining ? "YOU'RE INVITED TO" : 'WELCOME TO'}</span>
           <span className="gate-title-big">Diwali Mela</span>
         </div>
 
         <p className="gate-invite">
-          Come as the lamps are lit and the lanes fill with light &mdash; stay till the last diya
-          burns down.
+          {joining
+            ? 'A friend has saved you a place at the fair. Tell us your name and walk in — they will see you arrive.'
+            : 'Come as the lamps are lit and the lanes fill with light — stay till the last diya burns down.'}
         </p>
 
+        {/* Only asked for when arriving on an invite link: in single player nobody ever
+            sees this name, so the normal visit shouldn't be slowed down by a form. */}
+        {joining && (
+          <label className="gate-name">
+            <span className="gate-name-label">Your name</span>
+            <input
+              className="gate-name-input"
+              type="text"
+              value={playerName}
+              maxLength={16}
+              placeholder="e.g. Amit"
+              autoComplete="off"
+              onChange={(event) => onPlayerNameChange?.(event.target.value)}
+              onKeyDown={(event) => {
+                // Enter is "go" here, matching every other panel in the game.
+                if (event.key === 'Enter') onEnter();
+              }}
+            />
+          </label>
+        )}
+
         <button className="gate-cta" onClick={onEnter}>
-          Enter the Mela
+          {joining ? 'Join your friends' : 'Enter the Mela'}
         </button>
 
         <div className="gate-features">WANDER FREELY &middot; PLAY GAMES &middot; LOSE TRACK OF TIME</div>

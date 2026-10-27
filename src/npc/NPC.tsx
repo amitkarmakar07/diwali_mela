@@ -2,8 +2,9 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group } from 'three';
 import { PALETTE } from '../config/constants';
+import { HumanoidBody, type NPCProp } from './HumanoidBody';
 
-export type NPCProp = 'balloon' | 'bag';
+export type { NPCProp };
 
 interface NPCProps {
   mode: 'walk' | 'idle' | 'seated';
@@ -27,6 +28,12 @@ interface NPCProps {
 const SKY_EVENT_PERIOD = 17;
 const SKY_EVENT_DURATION = 3.2;
 const SKY_LOOK_ANGLE = 0.5;
+
+// The hip pivot sits at y=0.7, but a bench/gondola seat is at ~0.45, so a seated figure
+// has to drop or it hovers above it. The leg has no knee, so the best single-segment
+// approximation slants it forward and down far enough that the foot reaches the ground.
+// Exported so remote avatars (RemoteAvatar.tsx) sit at the same height as local NPCs.
+export const NPC_SEATED_DROP = -0.24;
 
 export function NPC({
   mode,
@@ -60,11 +67,7 @@ export function NPC({
     [],
   );
   const shirt = color ?? PALETTE.marigold;
-  // The hip pivot sits at y=0.7, but a bench seat is at ~0.45, so a seated figure has to
-  // drop or it hovers above the bench. The leg has no knee, so the best single-segment
-  // approximation slants it forward and down far enough that the foot reaches the ground.
-  const seatedDrop = mode === 'seated' ? -0.24 : 0;
-  const legRotation: [number, number, number] = mode === 'seated' ? [0.95, 0, 0] : [0, 0, 0];
+  const seatedDrop = mode === 'seated' ? NPC_SEATED_DROP : 0;
 
   // Starting mid-leg means the next target is the leg's end, not the leg's start.
   // `pause` counts down a dwell at the current waypoint (browsing/queueing); 0 = keep walking.
@@ -149,63 +152,16 @@ export function NPC({
 
   return (
     <group ref={root} position={[start[0], seatedDrop, start[1]]} rotation={[0, facing, 0]}>
-      <mesh position={[0, 1.0, 0]} castShadow>
-        <boxGeometry args={[0.38, 0.62, 0.24]} />
-        <meshStandardMaterial color={shirt} roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 1.46, 0]} castShadow>
-        <sphereGeometry args={[0.16, 10, 8]} />
-        <meshStandardMaterial color="#c98e63" roughness={0.9} />
-      </mesh>
-
-      {/* Limbs hang from pivot groups so they swing from the shoulder/hip. */}
-      <group ref={leftArm} position={[-0.26, 1.24, 0]}>
-        <mesh position={[0, -0.24, 0]}>
-          <cylinderGeometry args={[0.065, 0.055, 0.5, 6]} />
-          <meshStandardMaterial color={shirt} roughness={0.8} />
-        </mesh>
-        {prop === 'bag' && (
-          <mesh position={[0, -0.62, 0.04]} castShadow>
-            <boxGeometry args={[0.24, 0.28, 0.14]} />
-            <meshStandardMaterial color={propColor} roughness={0.75} />
-          </mesh>
-        )}
-      </group>
-      <group ref={rightArm} position={[0.26, 1.24, 0]}>
-        <mesh position={[0, -0.24, 0]}>
-          <cylinderGeometry args={[0.065, 0.055, 0.5, 6]} />
-          <meshStandardMaterial color={shirt} roughness={0.8} />
-        </mesh>
-        {prop === 'balloon' && (
-          <group position={[0, -0.48, 0]}>
-            <mesh position={[0, 0.78, 0]}>
-              <cylinderGeometry args={[0.006, 0.006, 1.56, 4]} />
-              <meshStandardMaterial color="#d8d2e0" roughness={0.9} />
-            </mesh>
-            <mesh position={[0, 1.73, 0]} castShadow>
-              <sphereGeometry args={[0.17, 12, 10]} />
-              <meshStandardMaterial
-                color={propColor}
-                emissive={propColor}
-                emissiveIntensity={0.35}
-                roughness={0.5}
-              />
-            </mesh>
-          </group>
-        )}
-      </group>
-      <group ref={leftLeg} position={[-0.11, 0.7, 0]} rotation={legRotation}>
-        <mesh position={[0, -0.35, 0]}>
-          <cylinderGeometry args={[0.075, 0.065, 0.7, 6]} />
-          <meshStandardMaterial color="#241d33" roughness={0.9} />
-        </mesh>
-      </group>
-      <group ref={rightLeg} position={[0.11, 0.7, 0]} rotation={legRotation}>
-        <mesh position={[0, -0.35, 0]}>
-          <cylinderGeometry args={[0.075, 0.065, 0.7, 6]} />
-          <meshStandardMaterial color="#241d33" roughness={0.9} />
-        </mesh>
-      </group>
+      <HumanoidBody
+        shirtColor={shirt}
+        prop={prop}
+        propColor={propColor}
+        seated={mode === 'seated'}
+        leftArmRef={leftArm}
+        rightArmRef={rightArm}
+        leftLegRef={leftLeg}
+        rightLegRef={rightLeg}
+      />
     </group>
   );
 }

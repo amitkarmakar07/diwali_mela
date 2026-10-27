@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { initAudio, setGameAudioPaused, useAudioStore } from '../audio/audioManager';
 import { useGame, msSinceModeTransition, setUiOverlayOpen } from '../core/GameState';
+import { useNet } from '../net/netStore';
+import { roomIdFromUrl } from '../net/netConfig';
+import { InvitePanel } from './InvitePanel';
 import { BagPanel } from './BagPanel';
 import { HelpOverlay } from './HelpOverlay';
 import { HudBar, PhotoModeBar } from './HudBar';
@@ -30,6 +33,15 @@ export function HUD() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [bagOpen, setBagOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+
+  // Only the peer list and the room matter here; positions never pass through React.
+  const friendCount = useNet((s) => Object.keys(s.peers).length);
+  const inRoom = useNet((s) => s.roomId !== null);
+  const selfName = useNet((s) => s.selfName);
+  // Arriving on someone's invite link is the one time the gate should ask who you are,
+  // so a friend sees a name over your head from the moment you walk in.
+  const [joiningRoom] = useState(() => roomIdFromUrl());
   const [minimapEnabled, setMinimapEnabled] = useState(true);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -84,6 +96,10 @@ export function HUD() {
         setBagOpen(false);
         return true;
       }
+      if (inviteOpen) {
+        setInviteOpen(false);
+        return true;
+      }
       const state = useGame.getState();
       if (state.activePanel) {
         // Also covers the confirm panel: this closes it without running onConfirm,
@@ -123,7 +139,7 @@ export function HUD() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [photoActive, helpOpen, settingsOpen, bagOpen, setPhotoActive]);
+  }, [photoActive, helpOpen, settingsOpen, bagOpen, inviteOpen, setPhotoActive]);
 
   // HUD-bar shortcuts: I (bag), M (mute), H (help), C (photo), O (settings). Each key is
   // only ever read here, so one press can only flip one of these — no double-toggle risk
@@ -178,6 +194,16 @@ export function HUD() {
         return;
       }
 
+      if (key === 'f') {
+        event.preventDefault();
+        if (inviteOpen) {
+          setInviteOpen(false);
+        } else if (!photoActive && useGame.getState().mode === 'exploring') {
+          setInviteOpen(true);
+        }
+        return;
+      }
+
       if (key === 'c') {
         event.preventDefault();
         if (photoActive) {
@@ -190,14 +216,15 @@ export function HUD() {
 
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, [started, photoActive, helpOpen, settingsOpen, bagOpen, toggleMute, setPhotoActive]);
+  }, [started, photoActive, helpOpen, settingsOpen, bagOpen, inviteOpen, toggleMute, setPhotoActive]);
 
   // Any overlay that needs a usable cursor (a game panel, Help, Settings, Bag, or photo
   // mode's exit/save buttons) must release pointer lock while open and let the player
   // re-acquire it on close — otherwise the overlay is there but unclickable.
   useEffect(() => {
     if (!started) return;
-    const overlayOpen = Boolean(activePanel) || helpOpen || settingsOpen || bagOpen || photoActive;
+    const overlayOpen =
+      Boolean(activePanel) || helpOpen || settingsOpen || bagOpen || inviteOpen || photoActive;
     // Tell PlayerController this unlock is intentional, or it pauses the game on us.
     setUiOverlayOpen(overlayOpen);
     if (overlayOpen) {
@@ -214,7 +241,7 @@ export function HUD() {
         /* browser may reject, or re-lock is throttled right after an exit */
       }
     }
-  }, [activePanel, started, helpOpen, settingsOpen, bagOpen, photoActive]);
+  }, [activePanel, started, helpOpen, settingsOpen, bagOpen, inviteOpen, photoActive]);
 
   useEffect(() => {
     if (!started) return;
@@ -234,7 +261,14 @@ export function HUD() {
   if (!started) {
     return (
       <div className="hud-root">
-        <StartGate onEnter={handleStartClick} />
+        <StartGate
+          onEnter={handleStartClick}
+          joiningRoom={joiningRoom}
+          playerName={selfName}
+          onPlayerNameChange={(name) =>
+            useNet.getState().setProfile(name, useNet.getState().selfColor)
+          }
+        />
       </div>
     );
   }
@@ -298,6 +332,9 @@ export function HUD() {
           onPhoto={() => setPhotoActive(true)}
           onSettings={() => setSettingsOpen(true)}
           onBag={() => setBagOpen(true)}
+          onFriends={() => setInviteOpen(true)}
+          friendCount={friendCount}
+          inRoom={inRoom}
           bagCount={bagCount}
           muted={muted}
           onToggleMute={toggleMute}
@@ -311,6 +348,8 @@ export function HUD() {
       {helpOpen && !photoActive && <HelpOverlay onClose={() => setHelpOpen(false)} />}
 
       {bagOpen && !photoActive && <BagPanel onClose={() => setBagOpen(false)} />}
+
+      {inviteOpen && !photoActive && <InvitePanel onClose={() => setInviteOpen(false)} />}
 
       {settingsOpen && !photoActive && (
         <SettingsPanel

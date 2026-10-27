@@ -1,10 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import { Group, Vector3 } from 'three';
 import { FERRIS, PALETTE } from '../../config/constants';
 import { useGame, RIDE_COST } from '../../core/GameState';
 import { Interactable } from '../../interaction/Interactable';
+import { clearLocalSeat, registerSeats, setLocalSeat } from '../../net/rideSeats';
 import { RideCameraRig, type RideLook } from './RideCameraRig';
 
 const TAU = Math.PI * 2;
@@ -26,24 +27,55 @@ export function FerrisWheel() {
     [],
   );
 
+  /**
+   * Writes gondola `index`'s world position into `out` and returns the yaw a rider in it
+   * faces. The local camera and the seat registry share it so a friend riding gondola 3
+   * lands on THIS client's gondola 3, whatever angle our own wheel happens to be at.
+   */
+  const seatAt = useCallback(
+    (index: number, out: Vector3) => {
+      const a = gondolas[index].baseAngle + angle.current;
+      out.set(
+        cx + Math.cos(a) * FERRIS.radius,
+        FERRIS.hubHeight + Math.sin(a) * FERRIS.radius + FERRIS.seatDrop,
+        cz + FERRIS.gondolaOffset + FERRIS.seatForward,
+      );
+      // Hold the whole mela in frame for the entire orbit: aim at its heart and let
+      // the climb do the tilting, so the horizon rides up into the top of the frame.
+      return Math.atan2(out.x - FERRIS.lookTarget[0], out.z - FERRIS.lookTarget[2]);
+    },
+    [gondolas, cx, cz],
+  );
+
   useFrame((_, delta) => {
     angle.current = (angle.current + FERRIS.rotationSpeed * delta) % TAU;
     if (wheel.current) wheel.current.rotation.z = angle.current;
 
-    const a = gondolas[boardedIndex.current].baseAngle + angle.current;
-    seat.set(
-      cx + Math.cos(a) * FERRIS.radius,
-      FERRIS.hubHeight + Math.sin(a) * FERRIS.radius + FERRIS.seatDrop,
-      cz + FERRIS.gondolaOffset + FERRIS.seatForward,
+    look.yaw = seatAt(boardedIndex.current, seat);
+    look.pitch = Math.atan2(
+      FERRIS.lookTarget[1] - seat.y,
+      Math.hypot(FERRIS.lookTarget[0] - seat.x, FERRIS.lookTarget[2] - seat.z),
     );
-
-    // Hold the whole mela in frame for the entire orbit: aim at its heart and let
-    // the climb do the tilting, so the horizon rides up into the top of the frame.
-    const dx = FERRIS.lookTarget[0] - seat.x;
-    const dz = FERRIS.lookTarget[2] - seat.z;
-    look.yaw = Math.atan2(-dx, -dz);
-    look.pitch = Math.atan2(FERRIS.lookTarget[1] - seat.y, Math.hypot(dx, dz));
   });
+
+  useEffect(
+    () =>
+      registerSeats('ferris-wheel', FERRIS.gondolaCount, (index, out) =>
+        index >= 0 && index < gondolas.length ? seatAt(index, out) : null,
+      ),
+    [gondolas, seatAt],
+  );
+
+  // Every exit path lives outside this file - RideCameraRig's E key and its timer, plus
+  // the HUD's leave button - so watch the store instead of duplicating them: the moment
+  // this ride stops being the active one, we are out of our gondola.
+  useEffect(
+    () =>
+      useGame.subscribe((state, prev) => {
+        if (prev.activeRide === 'ferris-wheel' && state.activeRide !== 'ferris-wheel') clearLocalSeat();
+      }),
+    [],
+  );
 
   const board = () => {
     // Board whichever gondola is nearest the bottom of the wheel right now.
@@ -82,6 +114,9 @@ export function FerrisWheel() {
           useGame.getState().showToast(`You no longer have ${RIDE_COST} coins for the Ferris wheel.`);
           return;
         }
+        // Publish the gondola only once the fare is actually paid, so cancelling or a
+        // failed spend never leaves us broadcasting a seat we never took.
+        setLocalSeat('ferris-wheel', boardedIndex.current);
         useGame.getState().enterRide('ferris-wheel');
       },
     });
