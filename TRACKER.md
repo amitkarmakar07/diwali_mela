@@ -216,7 +216,14 @@ Known limits, by design:
       WebGL it can't use. Detection is a narrow window OR a primary-coarse, no-hover
       pointer — checking the PRIMARY pointer keeps touchscreen laptops on the desktop path,
       since a false positive locks a real player out. Flips live on resize/rotate.
-- Verified in a real browser at phone and desktop viewports, plus a live resize both ways.
+- [x] **Meta Pixel** (id 1452802041241581) in index.html. The `<noscript>` fallback image
+      lives in `<body>`, not `<head>` as Meta's copy-paste block has it: a `<noscript>` in
+      `<head>` may only contain `<link>`, `<style>` and `<meta>`, and an `<img>` there makes
+      the document unparseable (Vite: disallowed-content-in-noscript-in-head). Works the
+      same from `<body>`. Unlike Vercel Analytics this one sets cookies and reports to Meta,
+      so it is the piece that carries consent obligations for EU/UK visitors.
+- Verified in a real browser at phone and desktop viewports, plus a live resize both ways;
+  pixel confirmed loading (fbq v2.9.435) with the game still booting alongside it.
 
 ## Deferred to later milestones
 
