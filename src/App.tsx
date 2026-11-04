@@ -12,11 +12,14 @@ import { NetworkProvider } from './net/NetworkProvider';
 import { useNet } from './net/netStore';
 import { roomIdFromUrl } from './net/netConfig';
 import { useGame } from './core/GameState';
+import { MobileNotice } from './ui/MobileNotice';
+import { useSmallScreen } from './ui/useSmallScreen';
 import { PALETTE, PLAYER } from './config/constants';
 import './App.css';
 
 export default function App() {
   const started = useGame((s) => s.started);
+  const smallScreen = useSmallScreen();
 
   // Joining is deliberately deferred until the player actually walks in. Connecting while
   // they are still reading the title screen would park a motionless ghost at the spawn
@@ -28,6 +31,11 @@ export default function App() {
     const fromLink = roomIdFromUrl();
     if (fromLink && useNet.getState().roomId === null) useNet.getState().setRoomId(fromLink);
   }, [started]);
+
+  // Returned before the Canvas exists on purpose: mounting the scene would download and
+  // compile a ~3.8MB WebGL build on a phone that can't play it anyway. Every hook above
+  // still runs, so this stays a legal early return and flips live on resize/rotate.
+  if (smallScreen) return <MobileNotice />;
 
   return (
     <KeyboardControls map={keyboardMap}>

@@ -202,6 +202,22 @@ Known limits, by design:
 - Coins, bag and diya progress remain **local** — deliberately, to avoid any shared
   economy or authority. Shared diyas/fireworks are the obvious next step.
 
+## Milestone 8 — Hosting, analytics and the mobile gate (2026-11-04)
+
+- Live at **https://diwali-mela-sigma.vercel.app** — confirmed building from this repo
+  (the deployed bundle hash matched a local build, and contained the multiplayer strings).
+- [x] **Vercel Web Analytics** for unique daily visitors. Uses the `@vercel/analytics/react`
+      entry — NOT `/next`, which is what the dashboard shows by default and would break a
+      Vite build. `<Analytics/>` sits beside `<App/>` in main.tsx rather than inside it, so
+      a phone visit is still counted even though App short-circuits to the notice.
+- [x] **Mobile gate.** Phones get a "please open on a desktop" card instead of the game:
+      the controls are WASD plus pointer-lock mouse-look, which touch doesn't have. The
+      Canvas is never mounted there, so a handset doesn't download and compile ~3.8MB of
+      WebGL it can't use. Detection is a narrow window OR a primary-coarse, no-hover
+      pointer — checking the PRIMARY pointer keeps touchscreen laptops on the desktop path,
+      since a false positive locks a real player out. Flips live on resize/rotate.
+- Verified in a real browser at phone and desktop viewports, plus a live resize both ways.
+
 ## Deferred to later milestones
 
 Ordered by the build sequence agreed after the reference study:
