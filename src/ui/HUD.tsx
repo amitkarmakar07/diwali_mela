@@ -8,6 +8,7 @@ import { BagPanel } from './BagPanel';
 import { HelpOverlay } from './HelpOverlay';
 import { HudBar, PhotoModeBar } from './HudBar';
 import { InteractionPrompt } from './InteractionPrompt';
+import { MadeByCredit } from './MadeByCredit';
 import { Minimap } from './Minimap';
 import { PanelModal } from './PanelModal';
 import { PauseMenu } from './PauseMenu';
@@ -324,6 +325,9 @@ export function HUD() {
       <PanelModal />
       <PauseMenu />
       {!photoActive && <Minimap enabled={minimapEnabled} />}
+      {/* Sits directly under the Mela Map. Hidden in photo mode and while paused, same as
+          the rest of the chrome — a credit shouldn't survive into a screenshot. */}
+      {!photoActive && mode !== 'paused' && <MadeByCredit placement="hud" />}
       {!photoActive && mode !== 'paused' && <RadioPlayer />}
 
       {!photoActive && mode !== 'paused' && (

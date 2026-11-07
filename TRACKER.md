@@ -222,6 +222,11 @@ Known limits, by design:
       the document unparseable (Vite: disallowed-content-in-noscript-in-head). Works the
       same from `<body>`. Unlike Vercel Analytics this one sets cookies and reports to Meta,
       so it is the piece that carries consent obligations for EU/UK visitors.
+- [x] **Author credit** — "Made with (heart) by Amit Karmakar" plus an Instagram follow
+      link (instagram.com/coder_talk). Centred along the bottom of the title screen, and
+      stacked under the Mela Map in game. One component, two placements (`MadeByCredit`).
+      The minimap was raised to 4.5rem to seat it underneath; the old anonymous
+      "Hand-built, with love" gate line was removed as a duplicate.
 - Verified in a real browser at phone and desktop viewports, plus a live resize both ways;
   pixel confirmed loading (fbq v2.9.435) with the game still booting alongside it.
 

@@ -1,0 +1,147 @@
+/* Author credit. Two placements share this file: centred under the title screen, and
+   stacked under the Mela Map while playing. See MadeByCredit.tsx. */
+
+.made-by {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #cbbfe6;
+  /* The HUD root is pointer-events: none, so the link has to opt back in. */
+  pointer-events: none;
+}
+
+.made-by-line {
+  white-space: nowrap;
+}
+
+.made-by-heart {
+  /* Emoji ignore `color`, so the warmth has to come from a glow behind it. */
+  filter: drop-shadow(0 0 5px rgba(255, 90, 120, 0.75));
+  font-size: 0.85em;
+}
+
+/* Spoken by screen readers in place of the emoji, which would otherwise be read as
+   "red heart" mid-sentence or skipped entirely. */
+.made-by-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The one piece that should catch the eye — gold gradient text with a lamp-like glow,
+   sitting on a drop shadow so it stays readable over a bright stall or the night sky. */
+.made-by-name {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: linear-gradient(170deg, #fff4d0 0%, #ffcc33 48%, #ff9a2e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 7px rgba(255, 180, 70, 0.5)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75));
+  animation: made-by-shimmer 4.2s ease-in-out infinite;
+}
+
+@keyframes made-by-shimmer {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(255, 180, 70, 0.4)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75));
+  }
+  50% {
+    filter: drop-shadow(0 0 13px rgba(255, 196, 92, 0.75)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75));
+  }
+}
+
+.made-by-follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  padding: 0.22rem 0.62rem;
+  border: 1px solid rgba(255, 204, 51, 0.38);
+  border-radius: 50px;
+  background: rgba(26, 21, 56, 0.55);
+  color: #ffd98a;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: auto;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.made-by-follow:hover {
+  color: #0b0a1f;
+  border-color: #ffcc33;
+  background: linear-gradient(135deg, #ffcc33 0%, #ffb24d 100%);
+  transform: translateY(-1px);
+}
+
+.made-by-follow:focus-visible {
+  outline: 2px solid #ffcc33;
+  outline-offset: 3px;
+}
+
+.credit-ig-glyph {
+  flex: none;
+}
+
+/* --- Title screen: one centred line along the bottom --- */
+.made-by-gate {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 0.6rem;
+  pointer-events: auto;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+}
+
+/* --- In the mela: a narrow stacked block under the Mela Map --- */
+.made-by-hud {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 0.9rem;
+  width: 170px;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.66rem;
+  text-align: center;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8);
+  z-index: 50;
+}
+
+.made-by-hud .made-by-follow {
+  padding: 0.18rem 0.55rem;
+  font-size: 0.63rem;
+}
+
+@media (max-width: 800px) {
+  .made-by-hud {
+    right: 1rem;
+    width: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .made-by-gate {
+    flex-direction: column;
+    gap: 0.4rem;
+    bottom: 0.7rem;
+    font-size: 0.72rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .made-by-name {
+    animation: none;
+  }
+}

@@ -267,16 +267,6 @@
   padding: 0 1rem;
 }
 
-.gate-credit {
-  position: absolute;
-  bottom: 1rem;
-  right: 1.25rem;
-  font-family: var(--font-ui);
-  font-size: 0.7rem;
-  color: #cbbfe6;
-  opacity: 0.45;
-}
-
 @media (max-width: 600px) {
   .gate-root {
     /* A narrower viewport crops this very wide shot harder still, so hold the
@@ -309,10 +299,5 @@
   .gate-note {
     bottom: 3.5rem;
     font-size: 0.7rem;
-  }
-
-  .gate-credit {
-    bottom: 0.5rem;
-    right: 0.75rem;
   }
 }

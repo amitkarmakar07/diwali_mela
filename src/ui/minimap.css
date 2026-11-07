@@ -2,7 +2,8 @@
 
 .minimap-root {
   position: absolute;
-  bottom: 1.5rem;
+  /* Raised to clear the author credit that now sits beneath it (madeByCredit.css). */
+  bottom: 4.5rem;
   right: 1.5rem;
   width: 170px;
   pointer-events: none;
@@ -106,7 +107,7 @@
 
 @media (max-width: 800px) {
   .minimap-root {
-    bottom: 1rem;
+    bottom: 4rem;
     right: 1rem;
     width: 140px;
   }

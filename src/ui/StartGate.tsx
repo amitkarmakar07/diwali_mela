@@ -1,3 +1,4 @@
+import { MadeByCredit } from './MadeByCredit';
 import './startGate.css';
 
 interface StartGateProps {
@@ -85,7 +86,9 @@ export function StartGate({
       </div>
 
       <div className="gate-note">No sign-in, no save file &mdash; just the fair, waiting for you tonight.</div>
-      <div className="gate-credit">Hand-built, with love, for the Festival of Lights.</div>
+      {/* Replaces the old anonymous "hand-built, with love" line — same sentiment, but
+          now signed, and it would read as a duplicate alongside it. */}
+      <MadeByCredit placement="gate" />
     </div>
   );
 }
