@@ -5,10 +5,11 @@ const INSTAGRAM_URL = 'https://www.instagram.com/coder_talk/';
 interface MadeByCreditProps {
   /**
    * `gate` is the wide, centred line on the title screen; `hud` is the narrow stacked
-   * version that sits under the Mela Map while playing. Same markup, different rhythm —
-   * the HUD column is only 170px, so the follow link has to drop to its own row there.
+   * version under the Mela Map while playing; `panel` sits inside a card in normal flow
+   * rather than pinned to a corner. Same markup, different rhythm — the HUD column is
+   * only 170px, so the follow link has to drop to its own row there.
    */
-  placement: 'gate' | 'hud';
+  placement: 'gate' | 'hud' | 'panel';
 }
 
 /** Inline so it inherits the glow and needs no image asset — the project ships no bitmaps. */

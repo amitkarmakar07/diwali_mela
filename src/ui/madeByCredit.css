@@ -124,6 +124,16 @@
   font-size: 0.63rem;
 }
 
+/* --- Inside a card (pause menu): normal flow, not pinned to a corner --- */
+.made-by-panel {
+  justify-content: center;
+  gap: 0.55rem;
+  margin-top: 1.5rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid rgba(255, 204, 51, 0.18);
+  font-size: 0.74rem;
+}
+
 @media (max-width: 800px) {
   .made-by-hud {
     right: 1rem;

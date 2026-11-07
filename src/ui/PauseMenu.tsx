@@ -1,4 +1,5 @@
 import { useGame } from '../core/GameState';
+import { MadeByCredit } from './MadeByCredit';
 
 export function PauseMenu() {
   const mode = useGame((s) => s.mode);
@@ -30,6 +31,10 @@ export function PauseMenu() {
         <button className="hud-pause-button" onClick={handleResume}>
           Resume
         </button>
+
+        {/* The in-world credit under the Mela Map is hidden while paused, so it lives here
+            instead — and a paused player is the one with time to read it. */}
+        <MadeByCredit placement="panel" />
       </div>
     </div>
   );
